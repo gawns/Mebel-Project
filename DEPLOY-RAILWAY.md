@@ -209,7 +209,7 @@ di log Railway.
 ```
 
 - `requirements.txt`: Flask>=3.0, PyMySQL>=1.1, gunicorn>=21.2
-- `runtime.txt`: python-3.12
+- `runtime.txt`: `3.12.0` (tanpa awalan `python-`)
 - Port: dari env `PORT` (Railway mengisinya otomatis)
 - Health check: `/api/health` → `status: ok` bila DB & config sehat.
 
