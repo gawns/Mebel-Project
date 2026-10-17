@@ -1,6 +1,6 @@
 ﻿/**
  * Ine Mebel Jepara - Main Script
- * Data: MySQL-backed product store (API Flask)
+ * Data: Postgres-backed product store (API Flask)
  * Handles: Intro, Navbar, Mobile menu, Product rendering,
  *          Catalog filters/sort/load-more, Detail page,
  *          Floating WhatsApp FAB, Wishlist
@@ -9,7 +9,7 @@
 'use strict';
 
 /* ===============================================================
-   API - SUMBER DATA (MySQL via Flask)
+   API - SUMBER DATA (Postgres via Flask)
    =============================================================== */
 const API_BASE = 'api';
 const PRODUCT_CATEGORIES = ['kursi', 'meja', 'sofa', 'lemari', 'aksesoris', 'lainnya'];

@@ -4,20 +4,24 @@ Jalankan sekali: python fix-images.py
 """
 
 import os
+import sys
+
+import psycopg
+from psycopg.rows import dict_row
 
 import config
-import pymysql
 
 DEFAULT_IMG = "img/produk-sofa-klasik-marun.jpeg"
 
 
 def main():
-    conn = pymysql.connect(
-        host=config.DB_HOST, port=config.DB_PORT,
-        user=config.DB_USER, password=config.DB_PASS,
-        database=config.DB_NAME, charset="utf8mb4",
-        cursorclass=pymysql.cursors.DictCursor, autocommit=True,
+    if not config.DATABASE_URL:
+        print("DATABASE_URL kosong.")
+        return 1
+    conn = psycopg.connect(
+        config.DATABASE_URL, autocommit=True, row_factory=dict_row,
     )
+    conn.cursor_factory = psycopg.ClientCursor
     with conn, conn.cursor() as cur:
         # 1) Gambar yang masih mengarah ke Unsplash (foto di luar repo) -> default.
         cur.execute(

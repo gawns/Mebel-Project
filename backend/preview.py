@@ -2,7 +2,7 @@
 DEV PREVIEW ONLY - bukan bagian produksi.
 Jalankan: python preview.py  -> http://127.0.0.1:5055
 
-Kenapa ada: app.py butuh MySQL/Laragon yang tidak jalan di mesin ini.
+Kenapa ada: app.py butuh database Postgres yang tidak selalu tersedia.
 Server ini menyajikan file statis + /api/products + /api/reviews dari SEED
 di db-init.py, supaya tampilan bisa dilihat & diverifikasi di browser.
 Hapus file ini saat deploy (railway pakai app.py).

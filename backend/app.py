@@ -1,6 +1,6 @@
 """
-Ine Mebel Jepara - Aplikasi Flask + Laragon
-============================================
+Ine Mebel Jepara - Aplikasi Flask + Postgres (Neon)
+===================================================
 Menyajikan halaman statis (HTML/CSS/JS) sekaligus REST API produk.
 
 Cara menjalankan:
@@ -20,6 +20,11 @@ import os
 import re
 import sys
 import time
+
+# Vercel meng-import aplikasi sebagai paket `backend.app`, sehingga folder
+# backend/ tidak otomatis ada di sys.path. Tanpa baris ini `import config`
+# gagal saat deploy.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from flask import Flask, jsonify, request, send_from_directory, abort
 from werkzeug.utils import secure_filename
@@ -48,7 +53,8 @@ ALLOWED_IMAGE_EXTS = tuple(getattr(config, "ALLOWED_IMAGE_EXTS", (".jpg", ".jpeg
 # verifikasi "deploy sudah ter-update?" cukup dari browser, tanpa baca dashboard.
 # Railway mengisi RAILWAY_GIT_COMMIT_SHA saat deploy dari GitHub.
 COMMIT_SHA = (
-    os.getenv("RAILWAY_GIT_COMMIT_SHA")
+    os.getenv("VERCEL_GIT_COMMIT_SHA")
+    or os.getenv("RAILWAY_GIT_COMMIT_SHA")
     or os.getenv("GIT_COMMIT")
     or os.getenv("SOURCE_VERSION")
     or "unknown"
@@ -119,6 +125,13 @@ def save_uploaded_image(file_storage):
         size = None
     if size is not None and size > MAX_UPLOAD_BYTES:
         return None, f"Ukuran file melebihi batas {getattr(config, 'MAX_UPLOAD_MB', 5)} MB."
+
+    if os.getenv("VERCEL"):
+        # Filesystem Vercel hanya baca. Tanpa cek ini upload berakhir 500.
+        return None, (
+            "Upload file tidak tersedia di Vercel. "
+            "Simpan foto di folder img/ lalu redeploy."
+        )
 
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -396,10 +409,11 @@ def session_status():
 def live():
     """Liveness check SUPER RINGAN - sengaja TIDAK menyentuh database.
 
-    Dipakai Railway sebagai healthcheckPath. Tujuannya hanya memastikan proses
-    gunicorn sudah listen & melayani HTTP. Bila endpoint ini bergantung pada DB,
-    deploy akan ditandai gagal saat MySQL belum siap / lambat, padahal aplikasi
-    sebenarnya sehat. Status DB & config tetap bisa dicek lewat /api/health.
+    Dipakai Railway/Vercel sebagai healthcheckPath. Tujuannya hanya memastikan
+    proses sudah listen & melayani HTTP. Bila endpoint ini bergantung pada DB,
+    deploy akan ditandai gagal saat Postgres belum siap / lambat, padahal
+    aplikasi sebenarnya sehat. Status DB & config tetap bisa dicek lewat
+    /api/health.
     """
     return jsonify({"success": True, "status": "alive", "commit": COMMIT_SHA})
 
@@ -485,7 +499,7 @@ def products_get():
 
         search = (request.args.get("search", "") or "").strip()
         if search:
-            where.append("(name LIKE %s OR description LIKE %s OR sku LIKE %s)")
+            where.append("(name ILIKE %s OR description ILIKE %s OR sku ILIKE %s)")
             like = f"%{search}%"
             params.extend([like, like, like])
 
@@ -557,7 +571,7 @@ def products_post():
         row = db.query_one(
             "SELECT * FROM products WHERE sku = %s LIMIT 1", (payload["sku"],)
         )
-    except db.pymysql.err.IntegrityError as exc:
+    except db.IntegrityError as exc:
         msg = "SKU sudah dipakai. Gunakan SKU lain."
         if "name" in str(exc).lower():
             msg = "Nama produk sudah dipakai. Gunakan nama lain."
@@ -625,7 +639,7 @@ def products_put():
             payload,
         )
         row = db.query_one("SELECT * FROM products WHERE id = %s LIMIT 1", (pid,))
-    except db.pymysql.err.IntegrityError as exc:
+    except db.IntegrityError as exc:
         msg = "SKU sudah dipakai. Gunakan SKU lain."
         if "name" in str(exc).lower():
             msg = "Nama produk sudah dipakai. Gunakan nama lain."
@@ -930,15 +944,15 @@ if __name__ == "__main__":
     debug = config.DEBUG and not os.getenv("PORT")
 
     print("=" * 60)
-    print("  Ine Mebel Jepara - Flask + MySQL")
+    print("  Ine Mebel Jepara - Flask + Postgres")
     print("=" * 60)
     print(f"  Website : http://{host}:{port}/")
     print(f"  Admin   : http://{host}:{port}/admin.html")
     print(f"  API     : http://{host}:{port}/api/products")
-    print(f"  MySQL   : {config.DB_HOST}:{config.DB_PORT}/{config.DB_NAME}")
+    print(f"  Database: {config.DB_TARGET}")
     print(f"  Login   : {'AKTIF (tabel admin_users)' if config.AUTH_ENABLED else 'nonaktif'}")
     print("=" * 60)
     print()
-    print("  Laragon lokal: pastikan sudah 'Start All' sebelum menjalankan ini.")
+    print("  Lokal: isi DATABASE_URL (Neon) di .env sebelum menjalankan ini.")
     print()
     app.run(host=host, port=port, debug=debug)

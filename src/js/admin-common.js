@@ -36,7 +36,7 @@ async function apiFetch(path, options = {}) {
   } catch (netErr) {
     return { ok: false, status: 0, data: {
       success: false,
-      message: `Tidak dapat menghubungi server (${path}). Pastikan MySQL (Laragon) berjalan dan "python app.py" sudah dijalankan.`,
+      message: `Tidak dapat menghubungi server (${path}). Pastikan server Flask berjalan.`,
     }};
   }
 

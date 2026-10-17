@@ -1,6 +1,6 @@
 # Ine Mebel Jepara
 
-Katalog mebel showroom di Bawu, Jepara. Flask + MySQL, halaman katalog, plus panel admin.
+Katalog mebel showroom di Bawu, Jepara. Flask + Postgres (Neon), halaman katalog, plus panel admin.
 
 - Repo: https://github.com/gawns/Mebel-Project
 - Live: https://jeparamebelku.up.railway.app
@@ -13,15 +13,23 @@ backend/   app.py, config.py, db.py, db-init.py
 img/       foto produk
 ```
 
+Database hanya lewat `DATABASE_URL` (Postgres/Neon):
+
+```bash
+DATABASE_URL=postgresql://user:pass@ep-xxxx.aws.neon.tech/neondb?sslmode=require
+```
+
 Dari folder `backend/`:
 
 ```bash
 cd backend
-python db-init.py
+python db-init.py   # buat tabel + seed
 python app.py
 ```
 
 Buka http://127.0.0.1:5000/
+
+Deploy: lihat `DEPLOY-VERCEL.md` (Vercel + Neon).
 
 ## Halaman
 
@@ -35,7 +43,7 @@ Buka http://127.0.0.1:5000/
 | Admin statistik | `/admin-stats.html` | Kunjungan, produk terpopuler |
 | Admin ulasan | `/admin-ulasan.html` | Tambah dan hapus ulasan |
 
-Login admin ada di tabel `admin_users`. Default `admin` / `2026`. Ganti lewat `db.set_admin_password(...)`.
+Login admin ada di tabel `admin_users`. Admin default dibuat dari env `DEFAULT_ADMIN_USER` / `DEFAULT_ADMIN_PASS` saat tabel masih kosong. Ganti kapan saja lewat `db.set_admin_password(...)`.
 
 ## API
 

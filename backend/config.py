@@ -1,11 +1,11 @@
 """
-Ine Mebel Jepara - Konfigurasi Flask + MySQL
-=============================================
-Mendukung dua mode:
-  - Lokal (Laragon): MySQL di 127.0.0.1:3306, user root tanpa password.
-  - Produksi (Railway dst.): semua nilai diambil dari environment variable.
-    Railway MySQL otomatis menyediakan MYSQLHOST/MYSQLPORT/MYSQLUSER/
-    MYSQLPASSWORD/MYSQLDATABASE (atau DATABASE_URL). Keduanya didukung.
+Ine Mebel Jepara - Konfigurasi Flask + Postgres (Neon)
+======================================================
+Database hanya lewat connection string Postgres:
+
+  DATABASE_URL=postgresql://user:pass@host/db?sslmode=require
+
+Neon mengisi nama yang sama (kadang POSTGRES_URL). Lokal ikut string itu.
 
 PENTING untuk deploy:
   - Set AUTH_SECRET ke nilai acak & rahasia (JANGAN pakai default).
@@ -14,6 +14,27 @@ PENTING untuk deploy:
 
 import os
 import urllib.parse
+
+
+def _load_env_file():
+    """Muat .env di root proyek (dipakai lokal; di hosting env sudah terisi).
+
+    ponytail: parser KEY=VALUE sederhana, tanpa kutip/ekspansi. Ganti ke
+    python-dotenv bila butuh fitur lebih.
+    """
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+    if not os.path.isfile(path):
+        return
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, val = line.split("=", 1)
+            os.environ.setdefault(key.strip(), val.strip().strip("'\""))
+
+
+_load_env_file()
 
 
 def _env(*names, default=""):
@@ -25,31 +46,25 @@ def _env(*names, default=""):
     return default
 
 
-def _parse_db_url(url):
-    """Ubah DATABASE_URL (mysql://user:pass@host:port/db) jadi dict."""
-    try:
-        parsed = urllib.parse.urlparse(url)
-        return {
-            "host": parsed.hostname or "127.0.0.1",
-            "port": int(parsed.port or 3306),
-            "user": urllib.parse.unquote(parsed.username or "root"),
-            "password": urllib.parse.unquote(parsed.password or ""),
-            "name": (parsed.path or "/").lstrip("/") or "jepara_nusantara",
-        }
-    except Exception:
-        return None
+def _postgres_url():
+    url = _env("DATABASE_URL", "POSTGRES_URL", "NEON_DATABASE_URL")
+    if url.startswith(("postgres://", "postgresql://")):
+        return url
+    return ""
 
 
-# Database.
-# Prioritas: MYSQLHOST (Railway plugin) -> DB_HOST -> DATABASE_URL -> default Laragon.
-_db_url = _parse_db_url(_env("DATABASE_URL", "MYSQL_URL")) if not _env("MYSQLHOST", "DB_HOST") else None
+DATABASE_URL = _postgres_url()
 
-DB_HOST = _env("MYSQLHOST", "DB_HOST", default=(_db_url or {}).get("host", "127.0.0.1"))
-DB_PORT = int(_env("MYSQLPORT", "DB_PORT", default=str((_db_url or {}).get("port", 3306))))
-DB_USER = _env("MYSQLUSER", "DB_USER", default=(_db_url or {}).get("user", "root"))
-DB_PASS = _env("MYSQLPASSWORD", "DB_PASS", default=(_db_url or {}).get("password", ""))
-DB_NAME = _env("MYSQLDATABASE", "DB_NAME", default=(_db_url or {}).get("name", "jepara_nusantara"))
-DB_SSL = _env("DB_SSL", default="0") == "1"
+try:
+    _parsed = urllib.parse.urlparse(DATABASE_URL) if DATABASE_URL else None
+except Exception:
+    _parsed = None
+
+DB_HOST = (_parsed.hostname if _parsed else "") or ""
+DB_PORT = int(_parsed.port if _parsed and _parsed.port else 5432)
+DB_USER = urllib.parse.unquote(_parsed.username or "") if _parsed else ""
+DB_NAME = ((_parsed.path or "/").lstrip("/").split("?")[0] if _parsed else "") or ""
+DB_TARGET = f"{DB_HOST}/{DB_NAME}" if DB_HOST else "(DATABASE_URL kosong)"
 
 # Server Flask
 HOST = os.getenv("APP_HOST", "0.0.0.0")
