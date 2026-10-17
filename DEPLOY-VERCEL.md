@@ -24,8 +24,10 @@ python check.db.py   # verifikasi
 ## 2. Vercel (aplikasi)
 
 1. https://vercel.com/new → import repo GitHub `gawns/Mebel-Project`.
-2. Framework Preset: **Flask** (terdeteksi dari `requirements.txt` +
-   `[tool.vercel] entrypoint` di `pyproject.toml`).
+2. Framework Preset: **Flask** (terdeteksi dari `requirements.txt`; entrypoint
+   `app.py` di root hanya re-export `backend.app:app`). Jangan tambahkan
+   `pyproject.toml` — Vercel lalu menjalankan `uv lock` dan menuntut tabel
+   `[project]` berisi dependensi.
 3. Environment Variables (Production + Preview):
 
 | Env | Isi |
