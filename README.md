@@ -10,6 +10,7 @@ Katalog mebel showroom di Bawu, Jepara. Flask + Postgres (Neon), halaman katalog
 ```
 src/html, src/css, src/js
 backend/   app.py, config.py, db.py, db-init.py
+app.py     entrypoint Vercel (re-export backend.app:app)
 img/       foto produk
 ```
 
