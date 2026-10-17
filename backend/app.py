@@ -51,7 +51,7 @@ ALLOWED_IMAGE_EXTS = tuple(getattr(config, "ALLOWED_IMAGE_EXTS", (".jpg", ".jpeg
 
 # Versi commit yang sedang berjalan - dipakai /api/health & /api/live agar
 # verifikasi "deploy sudah ter-update?" cukup dari browser, tanpa baca dashboard.
-# Railway mengisi RAILWAY_GIT_COMMIT_SHA saat deploy dari GitHub.
+# Vercel/Railway mengisi*_GIT_COMMIT_SHA saat deploy dari GitHub.
 COMMIT_SHA = (
     os.getenv("VERCEL_GIT_COMMIT_SHA")
     or os.getenv("RAILWAY_GIT_COMMIT_SHA")
@@ -243,8 +243,11 @@ _INSECURE_SECRETS = {"", "ubah-secret-ini-di-hosting"}
 
 
 def _is_production():
-    """Deteksi lingkungan produksi (Railway/Render/Heroku dsb.)."""
-    return bool(os.getenv("PORT")) or os.getenv("FLASK_ENV") == "production"
+    """Deteksi lingkungan produksi (Vercel/Render/Heroku dsb.)."""
+    return (
+        bool(os.getenv("PORT") or os.getenv("VERCEL"))
+        or os.getenv("FLASK_ENV") == "production"
+    )
 
 
 def security_selfcheck():
@@ -269,7 +272,7 @@ def security_selfcheck():
         problems.append("AUTH_SECRET masih default/kosong -> token admin mudah dipalsukan.")
     if getattr(config, "DEBUG", False):
         problems.append("APP_DEBUG=1 -> jangan aktifkan debug di produksi.")
-    if db.DEFAULT_ADMIN_PASS in ("2026", "") and os.getenv("DEFAULT_ADMIN_PASS") is None:
+    if db.DEFAULT_ADMIN_PASS in ("2026", "2027", "") and os.getenv("DEFAULT_ADMIN_PASS") is None:
         problems.append("DEFAULT_ADMIN_PASS masih default -> set DEFAULT_ADMIN_PASS yang kuat.")
 
     _CONFIG_PROBLEMS = problems
@@ -292,7 +295,7 @@ security_selfcheck()
 
 
 def _startup_init_db():
-    """Buat semua tabel saat app start (Railway/gunicorn maupun lokal).
+    """Buat semua tabel saat app start (Vercel/gunicorn maupun lokal).
 
     Best-effort: bila DB belum siap, cukup tampilkan peringatan agar container
     tetap hidup dan healthcheck melaporkan status. Diulang otomatis pada
@@ -308,10 +311,10 @@ def _startup_init_db():
 def _startup_init_db_async():
     """Jalankan _startup_init_db() di thread latar (NON-blocking).
 
-    PENTING untuk Railway: kalau DB lambat/tidak terjangkau, init tabel bisa
+    PENTING: kalau DB lambat/tidak terjangkau, init tabel bisa
     memakan connect_timeout=5s x beberapa percobaan. Menjalankannya langsung
-    saat import membuat gunicorn lama belum `listen`, sehingga healthcheck
-    Railway (healthcheckPath=/api/health) bisa timeout lebih dulu dan deploy
+    saat import membuat proses server lama belum `listen`, sehingga healthcheck
+    hosting bisa timeout lebih dulu dan deploy
     ditandai GAGAL/crash padahal aplikasi sehat. Karena itu init dijalankan
     di daemon thread: gunicorn langsung listen, dan bila DB siap tabel
     dibuat; bila belum, ensure_schema() akan mencobanya lagi saat request.
@@ -409,7 +412,7 @@ def session_status():
 def live():
     """Liveness check SUPER RINGAN - sengaja TIDAK menyentuh database.
 
-    Dipakai Railway/Vercel sebagai healthcheckPath. Tujuannya hanya memastikan
+    Dipakai hosting sebagai healthcheckPath. Tujuannya hanya memastikan
     proses sudah listen & melayani HTTP. Bila endpoint ini bergantung pada DB,
     deploy akan ditandai gagal saat Postgres belum siap / lambat, padahal
     aplikasi sebenarnya sehat. Status DB & config tetap bisa dicek lewat
@@ -420,7 +423,7 @@ def live():
 
 @app.route("/api/health", methods=["GET"])
 def health():
-    """Health check untuk Railway/Render. Melaporkan status app & DB."""
+    """health check untuk hosting. Melaporkan status app & DB."""
     db_ok = True
     db_error = None
     try:
@@ -938,7 +941,7 @@ if __name__ == "__main__":
     except Exception:
         pass
 
-    # Hosting (Railway/Render) memberi port lewat variabel environment $PORT.
+    # Hosting (Vercel/Render) memberi port lewat variabel environment $PORT.
     port = int(os.getenv("PORT", str(config.PORT)))
     host = os.getenv("APP_HOST", ("0.0.0.0" if os.getenv("PORT") else config.HOST))
     debug = config.DEBUG and not os.getenv("PORT")
