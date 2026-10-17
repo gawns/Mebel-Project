@@ -28,7 +28,17 @@ import config
 import db
 from db import DbError
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Struktur proyek:
+#   <root>/backend/   -> file Python (di sini)
+#   <root>/src/html/  -> halaman HTML
+#   <root>/src/css/   -> stylesheet
+#   <root>/src/js/    -> script
+#   <root>/img/       -> gambar produk & upload
+BASE_DIR   = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # root proyek
+HTML_DIR   = os.path.join(BASE_DIR, "src", "html")
+CSS_DIR    = os.path.join(BASE_DIR, "src", "css")
+JS_DIR     = os.path.join(BASE_DIR, "src", "js")
+IMG_DIR    = os.path.join(BASE_DIR, "img")
 UPLOAD_DIR = os.path.join(BASE_DIR, getattr(config, "UPLOAD_DIR", "img"))
 UPLOAD_URL_PREFIX = getattr(config, "UPLOAD_URL", "img").strip("/")
 MAX_UPLOAD_BYTES = int(getattr(config, "MAX_UPLOAD_MB", 5)) * 1024 * 1024
@@ -309,22 +319,37 @@ _startup_init_db_async()
 # ---------------------------------------------------------------------
 @app.route("/")
 def home():
-    return send_from_directory(BASE_DIR, "index.html")
+    return send_from_directory(HTML_DIR, "index.html")
+
+
+@app.route("/css/<path:filename>")
+def serve_css(filename):
+    return send_from_directory(CSS_DIR, filename)
+
+
+@app.route("/js/<path:filename>")
+def serve_js(filename):
+    return send_from_directory(JS_DIR, filename)
+
+
+@app.route("/img/<path:filename>")
+def serve_img(filename):
+    return send_from_directory(IMG_DIR, filename)
 
 
 @app.route("/<path:filename>")
 def static_files(filename):
-    """Layani file statis (html/css/js/img) dari folder root."""
+    """Layani halaman HTML dari src/html (dengan atau tanpa ekstensi)."""
     if filename.startswith("api/"):
         abort(404)
 
-    full = os.path.join(BASE_DIR, filename)
+    full = os.path.join(HTML_DIR, filename)
     if os.path.isfile(full):
-        return send_from_directory(BASE_DIR, filename)
+        return send_from_directory(HTML_DIR, filename)
 
     # Izinkan akses tanpa ekstensi .html (mis. /katalog -> katalog.html)
     if os.path.isfile(full + ".html"):
-        return send_from_directory(BASE_DIR, filename + ".html")
+        return send_from_directory(HTML_DIR, filename + ".html")
 
     abort(404)
 
@@ -424,7 +449,10 @@ def products_get():
     try:
         # Cari satu produk lewat ?sku= (dipakai halaman detail.html)
         if sku:
-            row = db.query_one("SELECT * FROM products WHERE sku = %s LIMIT 1", (sku,))
+            # Hanya produk aktif. Nonaktif/draft = 404, bukan tampil diam-diam.
+            row = db.query_one(
+                "SELECT * FROM products WHERE sku = %s AND status = 'aktif' LIMIT 1", (sku,)
+            )
             if not row:
                 return json_error("Produk tidak ditemukan.", 404)
             return jsonify({"success": True, "product": db.row_to_product(row)})
@@ -432,7 +460,9 @@ def products_get():
         if pid:
             if not pid.isdigit():
                 return json_error("Parameter ?id= tidak valid.", 400)
-            row = db.query_one("SELECT * FROM products WHERE id = %s LIMIT 1", (int(pid),))
+            row = db.query_one(
+                "SELECT * FROM products WHERE id = %s AND status = 'aktif' LIMIT 1", (int(pid),)
+            )
             if not row:
                 return json_error("Produk tidak ditemukan.", 404)
             return jsonify({"success": True, "product": db.row_to_product(row)})
@@ -513,13 +543,15 @@ def products_post():
                   description, img, img_alt, images_json, video_url,
                   material, wood_type, warna, finishing, berat,
                   dimensi_panjang, dimensi_lebar, dimensi_tinggi, kapasitas_beban,
-                  garansi, kondisi, perakitan, pelengkap, relasi_tipe, tags, status)
+                  garansi, kondisi, perakitan, pelengkap, relasi_tipe, tags, status,
+                  availability)
                VALUES
                  (%(name)s, %(sku)s, %(category)s, %(subcategory)s, %(brand)s, %(price)s, %(discount_price)s, %(stock)s,
                   %(description)s, %(img)s, %(img_alt)s, %(images_json)s, %(video_url)s,
                   %(material)s, %(wood_type)s, %(warna)s, %(finishing)s, %(berat)s,
                   %(dimensi_panjang)s, %(dimensi_lebar)s, %(dimensi_tinggi)s, %(kapasitas_beban)s,
-                  %(garansi)s, %(kondisi)s, %(perakitan)s, %(pelengkap)s, %(relasi_tipe)s, %(tags)s, %(status)s)""",
+                  %(garansi)s, %(kondisi)s, %(perakitan)s, %(pelengkap)s, %(relasi_tipe)s, %(tags)s, %(status)s,
+                  %(availability)s)""",
             payload,
         )
         row = db.query_one(
@@ -587,7 +619,8 @@ def products_put():
                  dimensi_tinggi = %(dimensi_tinggi)s, kapasitas_beban = %(kapasitas_beban)s,
                  garansi = %(garansi)s, kondisi = %(kondisi)s, perakitan = %(perakitan)s,
                  pelengkap = %(pelengkap)s, relasi_tipe = %(relasi_tipe)s,
-                 tags = %(tags)s, status = %(status)s
+                 tags = %(tags)s, status = %(status)s,
+                 availability = %(availability)s
                WHERE id = %(id)s""",
             payload,
         )
@@ -854,9 +887,9 @@ def not_found(_e):
     if request.path.startswith("/api/"):
         return json_error("Endpoint tidak ditemukan.", 404)
     # Untuk halaman biasa, tampilkan 404.html (bukan JSON).
-    page = os.path.join(BASE_DIR, "404.html")
+    page = os.path.join(HTML_DIR, "404.html")
     if os.path.isfile(page):
-        return send_from_directory(BASE_DIR, "404.html"), 404
+        return send_from_directory(HTML_DIR, "404.html"), 404
     return json_error("Halaman tidak ditemukan.", 404)
 
 

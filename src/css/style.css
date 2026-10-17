@@ -715,6 +715,8 @@ body.intro-active {
 }
 
 /* Nav links */
+
+
 .navbar__nav { margin-inline-start: auto; }
 
 .navbar__nav ul {
@@ -983,22 +985,22 @@ body.intro-active {
   transform: rotate(-45deg) translate(4px, -4px);
 }
 
-/* Mobile menu */
-.mobile-menu {
+/* Menu mobile lama (dropdown). Overlay baru di redesign.css. */
+.mobile-menu:not(:has(.mobile-menu__nav)) {
   background: rgba(243, 237, 224, 0.97);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid var(--border-subtle);
   padding: 1rem 0;
 }
-.mobile-menu a { color: var(--text-primary); }
+.mobile-menu:not(:has(.mobile-menu__nav)) a { color: var(--text-primary); }
 
-.mobile-menu ul {
+.mobile-menu:not(:has(.mobile-menu__nav)) ul {
   display: flex;
   flex-direction: column;
 }
 
-.mobile-menu a {
+.mobile-menu:not(:has(.mobile-menu__nav)) a {
   display: block;
   padding: 0.875rem clamp(1rem, 5vw, 2.5rem);
   font-size: 1rem;
@@ -1006,7 +1008,7 @@ body.intro-active {
   border-bottom: 1px solid var(--border-subtle);
   transition: color var(--t-fast), padding-left var(--t-fast);
 }
-.mobile-menu a:hover { color: var(--clr-neon-purple); padding-left: calc(clamp(1rem, 5vw, 2.5rem) + 8px); }
+.mobile-menu:not(:has(.mobile-menu__nav)) a:hover { color: var(--clr-neon-purple); padding-left: calc(clamp(1rem, 5vw, 2.5rem) + 8px); }
 
 /* ===============================================================
    BUTTONS

@@ -48,9 +48,8 @@ function getCategoryCounts(products = getProducts()) {
 function syncProductCounts() {
   const counts = getCategoryCounts();
   document.querySelectorAll('.cat-card__count').forEach((el) => {
-    const category = el.closest('.cat-card')?.querySelector('.cat-card__link')?.getAttribute('aria-label') || '';
-    const found = [...PRODUCT_CATEGORIES].find((value) => category.toLowerCase().includes(value));
-    el.textContent = String(found ? counts[found] : counts.semua);
+    const category = el.closest('.cat-card')?.dataset.category;
+    el.textContent = String(category ? (counts[category] ?? 0) : counts.semua);
   });
   document.querySelectorAll('.filter-count').forEach((el) => {
     const filter = el.closest('.sidebar-filter-btn')?.dataset.filter;
@@ -89,16 +88,39 @@ function createProductCard(product) {
   card.dataset.productId = String(product.id);
 
   const catLabel = product.category.charAt(0).toUpperCase() + product.category.slice(1);
+  const isPreorder = product.availability === 'preorder' || product.preorder;
   const discount = product.discountPrice && product.discountPrice < product.price;
   const displayPrice = discount ? product.discountPrice : product.price;
-  const stock = product.stock ?? 0;
+  const hasPrice = displayPrice != null && displayPrice > 0;
+  const stock = product.stock ?? null;
+  const stockOut = stock === 0;
   const href = detailUrl(product);
 
+  // Badge hanya untuk info yang berguna bagi pembeli.
+  // Status draft/nonaktif adalah urusan admin, tidak ditampilkan ke publik.
   let badges = '';
-  if (product.status === 'draft')    badges += `<span class="product-badge product-badge--draft">Draft</span>`;
-  if (product.status === 'nonaktif') badges += `<span class="product-badge product-badge--nonaktif">Nonaktif</span>`;
-  if (discount)                      badges += `<span class="product-badge product-badge--discount">-${Math.round((1 - product.discountPrice / product.price) * 100)}%</span>`;
-  if (stock === 0)                   badges += `<span class="product-badge product-badge--out">Habis</span>`;
+  // Badge hanya kalau harganya ada — kalau kosong, link "Pre Order ke WhatsApp"
+  // sudah menjelaskan statusnya, badge jadi dobel.
+  if (isPreorder && hasPrice) badges += `<span class="product-badge product-badge--preorder">Pre Order</span>`;
+  if (discount)    badges += `<span class="product-badge product-badge--discount">Hemat ${Math.round((1 - product.discountPrice / product.price) * 100)}%</span>`;
+  if (stockOut)    badges += `<span class="product-badge product-badge--out">Habis</span>`;
+
+  const waText = encodeURIComponent(
+    isPreorder && !hasPrice
+      ? `Halo Ine Mebel Jepara, saya mau pre order ${product.name}${product.sku ? ` (${product.sku})` : ''}. Mohon info harga dan estimasi pengerjaan.`
+      : `Halo Ine Mebel Jepara, saya mau pesan ${product.name}${product.sku ? ` (${product.sku})` : ''}. Apakah stoknya tersedia?`
+  );
+  const waHref = `https://wa.me/6285281587738?text=${waText}`;
+
+  // Tampilan harga: jika null/kosong → Pre Order ke WhatsApp
+  const priceHtml = hasPrice
+    ? `<span class="product-card__price">${formatRupiah(displayPrice)}</span>
+       ${discount ? `<span class="product-card__price-original">${formatRupiah(product.price)}</span>` : ''}`
+    : `<a class="product-card__preorder-link" href="${waHref}" target="_blank" rel="noopener noreferrer"
+          aria-label="Pre Order ${escapeAttr(product.name)} via WhatsApp">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+        Pre Order ke WhatsApp
+      </a>`;
 
   card.innerHTML = `
     <a href="${href}" class="product-card__img-wrap" tabindex="-1" aria-hidden="true">
@@ -114,14 +136,18 @@ function createProductCard(product) {
       <p class="product-card__desc">${escapeHTML(product.desc)}</p>
       <div class="product-card__footer">
         <div>
-          <span class="product-card__price">${formatRupiah(displayPrice)}</span>
-          ${discount ? `<span class="product-card__price-original">${formatRupiah(product.price)}</span>` : ''}
+          ${priceHtml}
         </div>
-        <button class="wishlist-icon-btn" aria-label="Tambah ${escapeAttr(product.name)} ke wishlist" aria-pressed="false">
+        <button class="wishlist-icon-btn" aria-label="Simpan ${escapeAttr(product.name)} ke wishlist" aria-pressed="false">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </button>
       </div>
-      ${stock > 0 && stock < 10 ? `<p class="product-card__stock product-card__stock--low">Stok tersisa: ${stock}</p>` : ''}
+      <a class="card-order-btn" href="${waHref}" target="_blank" rel="noopener noreferrer"
+         aria-label="Pesan ${escapeAttr(product.name)} lewat WhatsApp">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+        ${stockOut ? 'Tanya stok' : (isPreorder ? 'Pre Order' : 'Pesan')}
+      </a>
+      ${stock !== null && stock > 0 && stock < 10 ? `<p class="product-card__stock product-card__stock--low">Tersisa ${stock} unit</p>` : ''}
     </div>
   `;
 
@@ -257,6 +283,9 @@ function refreshWishlistUI() {
   if (toggleBtn) toggleBtn.setAttribute('aria-label', `Wishlist (${list.length} item)`);
   if (clearBtn) clearBtn.hidden = list.length === 0;
 
+  // Favorit berubah -> rekomendasi di landing ikut menyesuaikan.
+  if (document.getElementById('featured-grid')) renderRecommendations();
+
   // Kartu di katalog harus kembali ke bentuk awal saat item dihapus.
   syncAllWishlistButtons();
 
@@ -280,7 +309,7 @@ function refreshWishlistUI() {
         <img src="${escapeAttr(p.img)}" alt="" width="56" height="56" loading="lazy" />
         <span class="wishlist-item__info">
           <strong>${escapeHTML(p.name)}</strong>
-          <span class="wishlist-item__price">${formatRupiah(p.price)}</span>
+          <span class="wishlist-item__price">${p.price ? formatRupiah(p.price) : 'Pre Order'}</span>
         </span>
         <button class="wishlist-item__remove" data-id="${p.id}" aria-label="Hapus ${escapeAttr(p.name)} dari wishlist" type="button">✕</button>
       </a>`;
@@ -532,30 +561,42 @@ function initMobileMenu() {
   const menu   = document.getElementById('mobile-menu');
   if (!toggle || !menu) return;
 
-  toggle.addEventListener('click', () => {
-    const isOpen = toggle.getAttribute('aria-expanded') === 'true';
-    toggle.setAttribute('aria-expanded', String(!isOpen));
-    menu.hidden = isOpen;
-    if (!isOpen) {
+  const isOpen = () => toggle.getAttribute('aria-expanded') === 'true';
+
+  function setOpen(open, focusFirst = false) {
+    toggle.setAttribute('aria-expanded', String(open));
+    menu.hidden = !open;
+    // Kunci scroll body saat menu terbuka supaya latar tidak ikut bergeser.
+    document.body.classList.toggle('nav-open', open);
+    if (open && focusFirst) {
       const firstLink = menu.querySelector('a');
-      if (firstLink) firstLink.focus();
+      if (firstLink) firstLink.focus({ preventScroll: true });
     }
+  }
+
+  toggle.addEventListener('click', () => setOpen(!isOpen(), !isOpen()));
+
+  // Overlay fullscreen: tombol "Tutup" di dalam menu.
+  menu.querySelectorAll('[data-menu-close]').forEach(btn => {
+    btn.addEventListener('click', () => { setOpen(false); toggle.focus(); });
   });
 
-  document.addEventListener('click', (e) => {
-    if (!toggle.contains(e.target) && !menu.contains(e.target)) {
-      menu.hidden = true;
-      toggle.setAttribute('aria-expanded', 'false');
-    }
+  // Tutup setelah memilih link (anchor in-page; link antar-halaman tetap navigasi).
+  menu.addEventListener('click', (e) => {
+    if (e.target.closest('a')) setOpen(false);
   });
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
-      menu.hidden = true;
-      toggle.setAttribute('aria-expanded', 'false');
+    if (e.key === 'Escape' && isOpen()) {
+      setOpen(false);
       toggle.focus();
     }
   });
+
+  // Layar melebar ke desktop: menu mobile tidak relevan lagi.
+  const mq = window.matchMedia('(min-width: 1025px)');
+  const onWide = () => { if (mq.matches && isOpen()) setOpen(false); };
+  mq.addEventListener ? mq.addEventListener('change', onWide) : mq.addListener(onWide);
 }
 
 /* ===============================================================
@@ -627,6 +668,408 @@ function initFeaturedGrid() {
   featured.forEach(p => fragment.appendChild(createProductCard(p)));
   grid.appendChild(fragment);
 }
+
+/* ===============================================================
+   SEGMENTED CONTROL + REKOMENDASI OTOMATIS (landing page)
+   ---------------------------------------------------------------
+   Tiga sinyal, satu skor:
+     1. Pencarian   — kata kunci user (nama, subkategori, tag, kategori)
+     2. Favorit     — isi wishlist + kemiripan kategori/tag
+     3. Model       — pilihan segmen (Ruang Tamu / Ruang Makan)
+
+   Skor dihitung ulang tiap sinyal berubah, tanpa reload.
+   =============================================================== */
+const SEG_KEY = 'imj_segment_v1';
+
+function getSavedSegment() {
+  try { return localStorage.getItem(SEG_KEY) || 'tamu'; } catch { return 'tamu'; }
+}
+
+function saveSegment(seg) {
+  try { localStorage.setItem(SEG_KEY, seg); } catch {}
+}
+
+// Pecah query jadi token, buang kata yang tidak informatif.
+function queryTokens(query) {
+  const stop = new Set(['dan', 'yang', 'untuk', 'dengan', 'di', 'ke', 'dari', 'atau', 'saya', 'mau', 'cari', 'mencari']);
+  return String(query || '')
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(t => t.length >= 2 && !stop.has(t));
+}
+
+// Teks yang boleh dicocokkan untuk satu produk.
+function searchableText(p) {
+  return [p.name, p.subcategory, p.category, p.desc, p.material, p.woodType, p.finishing]
+    .concat(Array.isArray(p.tags) ? p.tags : [])
+    .concat(Array.isArray(p.warna) ? p.warna : [])
+    .filter(Boolean).join(' ').toLowerCase();
+}
+
+function scoreProduct(p, ctx) {
+  let score = 0;
+  const reasons = [];
+
+  // --- Sinyal 1: pencarian ---
+  // Pencarian adalah niat eksplisit: harus MENGALAHKAN sinyal pasif
+  // (segmen/favorit). Produk yang tidak cocok kata kunci diberi penalti
+  // besar supaya tidak muncul di atas hasil yang benar-benar cocok.
+  if (ctx.tokens.length) {
+    const hay = searchableText(p);
+    const nameLower = String(p.name || '').toLowerCase();
+    let hits = 0;
+    ctx.tokens.forEach(t => { if (hay.includes(t)) hits++; });
+    if (hits) {
+      score += hits * 12;
+      // Bonus kalau kena di nama produk (paling relevan)
+      if (ctx.tokens.some(t => nameLower.includes(t))) score += 5;
+      reasons.push('cocok pencarian');
+    } else {
+      score -= 10;
+    }
+  }
+
+  // --- Sinyal 2: favorit ---
+  if (ctx.wishIds.length) {
+    if (ctx.wishIds.includes(Number(p.id))) {
+      score += 4;
+      reasons.push('ada di favorit');
+    } else {
+      if (ctx.wishCats.has(p.category)) { score += 2.5; reasons.push('kategori favorit'); }
+      const pTags = Array.isArray(p.tags) ? p.tags : [];
+      if (pTags.some(t => ctx.wishTags.has(t))) { score += 1.5; reasons.push('gaya mirip favorit'); }
+    }
+  }
+
+  // --- Sinyal 3: model / segmen ---
+  if (ctx.segCat) {
+    if (p.category === ctx.segCat) { score += 6; reasons.push('sesuai model'); }
+    else {
+      // Subkategori masih satu keluarga ruang -> separuh nilai
+      const related = { sofa: ['kursi', 'meja'], meja: ['kursi', 'lemari'], kursi: ['meja'], lemari: ['kursi'] };
+      if ((related[ctx.segCat] || []).includes(p.category)) score += 1.5;
+    }
+  }
+
+  // --- Kesehatan stok: jangan rekomendasikan barang habis ---
+  const stock = Number(p.stock ?? 0);
+  if (stock === 0) score -= 3;
+  else if (stock < 10) score += 0.5;
+
+  return { score, reasons };
+}
+
+/* ---------------------------------------------------------------
+   REKOMENDASI: KUOTA DOMINAN, BUKAN SKOR SAJA
+   User klik "meja" -> minimal 4 dari 6 kartu HARUS meja.
+   Skor dipakai untuk mengurutkan di dalam kuota dan untuk mengisi
+   sisanya; skor tidak boleh menenggelamkan kategori yang dipilih.
+   --------------------------------------------------------------- */
+const DOMINANT_QUOTA = 4;
+
+function buildRecommendations(products, ctx, limit = 6) {
+  const active = products.filter(p => (p.status || 'aktif') === 'aktif');
+  const pool = active.length ? active : products;
+
+  const scored = pool.map(p => {
+    const { score, reasons } = scoreProduct(p, ctx);
+    return { p, score, reasons };
+  });
+  scored.sort((a, b) => b.score - a.score || Number(a.p.id) - Number(b.p.id));
+
+  const domCat = ctx.dominantCat;
+
+  // Pencarian adalah niat eksplisit: kalau user mengetik, kuota kategori
+  // TIDAK dipaksakan — hasil yang tidak cocok kata kunci tidak boleh muncul.
+  if (!domCat || ctx.tokens.length) return scored.slice(0, limit);
+
+  const same = scored.filter(t => t.p.category === domCat);
+  const rest = scored.filter(t => t.p.category !== domCat);
+
+  // Ambil sebanyak kuota (atau semua yang ada kalau kategori lebih sedikit),
+  // lalu isi sisanya dari kategori lain.
+  const takeSame = Math.min(same.length, Math.max(DOMINANT_QUOTA, limit - rest.length));
+  return same.slice(0, takeSame).concat(rest).slice(0, limit);
+}
+
+function describeReasons(ctx, top, domCat) {
+  if (ctx.tokens.length) {
+    const n = top.length;
+    return `Hasil pencarian "${ctx.tokens.join(' ')}" · ${n} produk cocok.`;
+  }
+  if (domCat) {
+    const n = top.filter(t => t.p && t.p.category === domCat).length;
+    const label = domCat.charAt(0).toUpperCase() + domCat.slice(1);
+    const sisa = top.length - n;
+    return `Dominan ${label} · ${n} ${label.toLowerCase()}` +
+           (sisa > 0 ? ` + ${sisa} pelengkap dari kategori lain.` : '.');
+  }
+  if (ctx.wishIds.length) return `Disesuaikan dari ${ctx.wishIds.length} favorit kamu.`;
+  return 'Paling sering dipesan pelanggan. Klik kategori untuk menyesuaikan.';
+}
+
+/* State rekomendasi terpusat: satu sumber kebenaran untuk semua pemicu
+   (kartu kategori, segmen ruang, pencarian, favorit). Disimpan di
+   sessionStorage supaya tidak reset saat pindah halaman lalu kembali. */
+const RECO_KEY = 'ine_reco_cat';
+
+function getRecoCategory() {
+  try { return sessionStorage.getItem(RECO_KEY) || null; } catch { return null; }
+}
+function setRecoCategory(cat) {
+  try {
+    if (cat) sessionStorage.setItem(RECO_KEY, cat);
+    else sessionStorage.removeItem(RECO_KEY);
+  } catch { /* private mode: state hanya hidup di memori */ }
+  renderRecommendations();
+}
+
+function renderRecommendations() {
+  const grid = document.getElementById('featured-grid');
+  if (!grid) return;
+
+  const products = getProducts();
+  if (!products.length) return;
+
+  const segBtn = document.querySelector('#seg-control .seg__btn[aria-checked="true"]');
+  // Kategori dominan: klik eksplisit user menang atas segmen.
+  const domCat = getRecoCategory() || (segBtn ? segBtn.dataset.cat : null);
+  const ctx = {
+    tokens:  queryTokens(document.getElementById('reco-search')?.value || ''),
+    wishIds: getWishlist(),
+    wishCats: new Set(),
+    wishTags: new Set(),
+    segCat:  segBtn ? segBtn.dataset.cat : null,
+    dominantCat: domCat,
+  };
+
+  // Turunkan kategori & tag favorit dari wishlist
+  ctx.wishIds.forEach(id => {
+    const p = products.find(x => Number(x.id) === Number(id));
+    if (!p) return;
+    if (p.category) ctx.wishCats.add(p.category);
+    (Array.isArray(p.tags) ? p.tags : []).forEach(t => ctx.wishTags.add(t));
+  });
+
+  let top = buildRecommendations(products, ctx, 6);
+
+  // Kalau user mengetik, jangan tampilkan yang tidak cocok sama sekali —
+  // hasil kosong lebih jujur daripada 6 kartu yang tidak relevan.
+  if (ctx.tokens.length) {
+    const matched = top.filter(t => t.reasons.includes('cocok pencarian'));
+    if (matched.length) top = matched;
+  }
+
+  grid.innerHTML = '';
+  if (!top.length) {
+    grid.innerHTML = '<p class="empty-state">Belum ada produk yang cocok. Coba kata kunci lain.</p>';
+  } else {
+    const frag = document.createDocumentFragment();
+    top.forEach(({ p, reasons }) => {
+      const card = createProductCard(p);
+      // Penanda kenapa produk ini muncul — transparan ke pembeli.
+      const flagText = reasons.length ? reasons[0] : null;
+      if (flagText) {
+        const flag = document.createElement('p');
+        flag.className = 'reco-flag';
+        flag.textContent = '♥ ' + flagText;
+        card.querySelector('.product-card__body')?.prepend(flag);
+      }
+      frag.appendChild(card);
+    });
+    grid.appendChild(frag);
+  }
+
+  const reasonEl = document.getElementById('reco-reason');
+  if (reasonEl) reasonEl.textContent = describeReasons(ctx, top, domCat);
+}
+
+/* Angka pendukung di CTA dihitung dari data, bukan hardcode. */
+function renderCtaStat() {
+  const el = document.getElementById('cta-stat');
+  if (!el) return;
+  const products = getProducts().filter(p => (p.status || 'aktif') === 'aktif');
+  if (!products.length) { el.textContent = ''; return; }
+  const cats = new Set(products.map(p => p.category).filter(Boolean));
+  el.textContent = `${products.length} produk · ${cats.size} kategori · bisa custom ukuran`;
+}
+
+/* ---------------------------------------------------------------
+   SCENE HERO
+   Set state (layout morph), gambar garis (stroke draw), lalu nyalakan
+   gerak (swing/bob/floaty). Auto-morph sekali supaya user melihat
+   bahwa scene ini hidup, lalu diam sampai user klik.
+   --------------------------------------------------------------- */
+const SCENE_LABEL = {
+  tamu:  'Ilustrasi ruang tamu: sofa, meja kopi, dan lampu gantung',
+  makan: 'Ilustrasi ruang makan: meja makan panjang, kursi, dan lampu gantung',
+};
+
+let _suppressReco = false;
+
+function setSceneState(state, cat) {
+  const stage = document.getElementById('hero-stage');
+  if (!stage) return;
+  if (!SCENE_LABEL[state]) state = 'tamu';
+
+  stage.dataset.state = state;
+  stage.setAttribute('aria-label', SCENE_LABEL[state]);
+
+  // 2. Stroke draw: reset instan lalu gambar ulang, supaya animasinya
+  //    terlihat setiap state berubah, bukan cuma sekali saat load.
+  //    Transition punya delay 400ms, jadi reset harus di-commit lewat
+  //    reflow (offsetWidth) — kalau tidak, nilai 0 lama masih berlaku
+  //    saat di-set balik dan tidak ada perubahan yang dianimasikan.
+  const lines = stage.querySelectorAll('.scene__line');
+  stage.dataset.drawn = '0';
+  lines.forEach(l => { l.style.transition = 'none'; l.style.strokeDashoffset = '1'; });
+  void stage.offsetWidth;
+  lines.forEach(l => { l.style.transition = ''; l.style.strokeDashoffset = ''; });
+  stage.dataset.drawn = '1';
+
+  // 3. Gerak: nyalakan setelah morph pertama selesai (800ms).
+  clearTimeout(stage._motionTimer);
+  stage._motionTimer = setTimeout(() => { stage.dataset.motion = '1'; }, 900);
+
+  // Klik segmen juga mengubah kategori dominan rekomendasi.
+  // Auto-morph tidak boleh menimpa pilihan user (_suppressReco).
+  if (cat && !_suppressReco) setRecoCategory(cat);
+}
+
+/* Semua elemen ber-data-category jadi pemicu rekomendasi:
+   kartu kategori, segmen ruang, dan pill filter kalau ada. */
+function initCategoryTriggers() {
+  document.querySelectorAll('.cat-card[data-category]').forEach(card => {
+    const cat = card.dataset.category;
+    const link = card.querySelector('.cat-card__link');
+    // Klik = sesuaikan rekomendasi di tempat, Ctrl/Cmd+klik tetap buka katalog.
+    card.addEventListener('click', (e) => {
+      if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+      e.preventDefault();
+      setRecoCategory(cat);
+      card.classList.add('is-selected');
+      document.querySelectorAll('.cat-card.is-selected').forEach(c => {
+        if (c !== card) c.classList.remove('is-selected');
+      });
+      document.getElementById('featured-heading')?.scrollIntoView({
+        behavior: 'smooth', block: 'center',
+      });
+    });
+    if (link) link.setAttribute('aria-label',
+      `Sesuaikan rekomendasi ke ${card.dataset.category}`);
+  });
+}
+
+function initSegControl() {
+  const seg = document.getElementById('seg-control');
+  if (!seg) return;
+
+  const btns = Array.from(seg.querySelectorAll('.seg__btn'));
+  if (!btns.length) return;
+
+  const thumb = seg.querySelector('.seg__thumb');
+
+  // Thumb morph: posisi + lebar diambil dari tombol aktif yang sebenarnya.
+  const moveThumb = (btn) => {
+    if (!thumb) return;
+    const pad = 4; // = --s1
+    thumb.style.left = `${btn.offsetLeft - pad}px`;
+    thumb.style.width = `${btn.offsetWidth + pad * 2 - 8}px`;
+  };
+
+  // userInitiated=false saat restore: jangan timpa kategori pilihan user
+  // yang tersimpan di sessionStorage.
+  const select = (btn, focus = false, userInitiated = false) => {
+    btns.forEach(b => {
+      const on = b === btn;
+      b.setAttribute('aria-checked', String(on));
+      b.tabIndex = on ? 0 : -1;
+    });
+    seg.dataset.morph = btn.dataset.seg;
+
+    moveThumb(btn);
+
+    // Scene hero ikut berganti state (layout morph CSS yang menggerakkan blok)
+    setSceneState(btn.dataset.seg, userInitiated ? btn.dataset.cat : null);
+
+    saveSegment(btn.dataset.seg);
+    renderRecommendations();
+    if (focus) btn.focus();
+  };
+
+  // Font selesai dimuat / layar berubah -> ukur ulang
+  const reflow = () => {
+    const active = seg.querySelector('.seg__btn[aria-checked="true"]');
+    if (active) moveThumb(active);
+  };
+  window.addEventListener('resize', reflow, { passive: true });
+  if (document.fonts?.ready) document.fonts.ready.then(reflow);
+
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => select(btn, false, true));
+  });
+
+  // Panah kiri/kanan — perilaku radiogroup standar
+  seg.addEventListener('keydown', (e) => {
+    const i = btns.indexOf(document.activeElement);
+    if (i < 0) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const next = e.key === 'ArrowRight' ? (i + 1) % btns.length : (i - 1 + btns.length) % btns.length;
+      select(btns[next], true, true);
+    }
+  });
+
+  // Pulihkan pilihan terakhir
+  const saved = getSavedSegment();
+  const start = btns.find(b => b.dataset.seg === saved) || btns[0];
+  select(start);
+}
+
+function initRecoSearch() {
+  const input = document.getElementById('reco-search');
+  if (!input) return;
+
+  const clearBtn = document.getElementById('reco-search-clear');
+  const grid = document.getElementById('featured-grid');
+
+  // Scroll halus ke grid produk, hanya kalau hasilnya memang di luar layar.
+  const scrollToResults = () => {
+    if (!grid || !grid.children.length) return;
+    const rect = grid.getBoundingClientRect();
+    const visible = rect.top < window.innerHeight * 0.75 && rect.bottom > 0;
+    if (visible) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    grid.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  };
+
+  let timer = null;
+  input.addEventListener('input', () => {
+    if (clearBtn) clearBtn.hidden = !input.value;
+    clearTimeout(timer);
+    // Debounce 180ms — cukup responsif, tidak render tiap ketukan
+    timer = setTimeout(() => {
+      renderRecommendations();
+      scrollToResults();
+    }, 180);
+  });
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      input.value = '';
+      clearBtn.hidden = true;
+      renderRecommendations();
+      input.focus();
+    });
+  }
+
+  // Enter tidak reload halaman — langsung lompat ke hasil
+  input.closest('form')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    renderRecommendations();
+    scrollToResults();
+  });
+}
 /* ===============================================================
    CATALOG PAGE (katalog.html)
    =============================================================== */
@@ -649,15 +1092,16 @@ function filteredAndSorted() {
   }
 
   if (currentPriceFilter !== 'all') {
-    if (currentPriceFilter === '0-2000000') list = list.filter(p => p.price < 2000000);
-    else if (currentPriceFilter === '2000000-5000000') list = list.filter(p => p.price >= 2000000 && p.price <= 5000000);
-    else if (currentPriceFilter === '5000000-10000000') list = list.filter(p => p.price > 5000000 && p.price <= 10000000);
-    else if (currentPriceFilter === '10000000+') list = list.filter(p => p.price > 10000000);
+    if (currentPriceFilter === '0-2000000') list = list.filter(p => p.price != null && p.price < 2000000);
+    else if (currentPriceFilter === '2000000-5000000') list = list.filter(p => p.price != null && p.price >= 2000000 && p.price <= 5000000);
+    else if (currentPriceFilter === '5000000-10000000') list = list.filter(p => p.price != null && p.price > 5000000 && p.price <= 10000000);
+    else if (currentPriceFilter === '10000000+') list = list.filter(p => p.price != null && p.price > 10000000);
   }
 
   switch (currentSort) {
-    case 'price-asc':  list.sort((a, b) => a.price - b.price); break;
-    case 'price-desc': list.sort((a, b) => b.price - a.price); break;
+    // Produk tanpa harga (Pre Order) selalu di akhir, apa pun arah sortirnya.
+    case 'price-asc':  list.sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity)); break;
+    case 'price-desc': list.sort((a, b) => (b.price ?? -1) - (a.price ?? -1)); break;
     case 'name':       list.sort((a, b) => a.name.localeCompare(b.name, 'id')); break;
     case 'stock':      list.sort((a, b) => (b.stock || 0) - (a.stock || 0)); break;
   }
@@ -677,7 +1121,19 @@ function renderCatalogGrid() {
   setTimeout(() => {
     grid.innerHTML = '';
     if (visible.length === 0) {
-      grid.innerHTML = '<p class="empty-state">Tidak ada produk di kategori ini.</p>';
+      // Empty state harus punya jalan keluar, bukan jalan buntu.
+      grid.innerHTML = `
+        <div class="empty-state empty-state--catalog">
+          <strong>Tidak ada produk yang cocok</strong>
+          <p>Kombinasi kategori dan harga ini belum ada isinya. Coba longgarkan filter, atau tanya kami — banyak produk bisa dibuat custom.</p>
+          <button class="btn btn--primary" type="button" id="reset-filter-btn">Tampilkan semua produk</button>
+        </div>`;
+      const resetBtn = grid.querySelector('#reset-filter-btn');
+      if (resetBtn) resetBtn.addEventListener('click', () => {
+        currentPriceFilter = 'all';
+        document.querySelectorAll('[data-price].active').forEach(b => b.classList.remove('active'));
+        setFilter('semua');
+      });
     } else {
       const fragment = document.createDocumentFragment();
       visible.forEach(p => fragment.appendChild(createProductCard(p)));
@@ -693,7 +1149,9 @@ function renderCatalogGrid() {
 
   const loadMoreBtn = document.getElementById('load-more-btn');
   if (loadMoreBtn) {
-    loadMoreBtn.style.display = visibleCount < list.length ? '' : 'none';
+    // hidden (bukan display) supaya tidak bisa diklik keyboard saat sudah habis.
+    loadMoreBtn.hidden = visibleCount >= list.length;
+    loadMoreBtn.style.display = visibleCount >= list.length ? 'none' : '';
   }
 }
 
@@ -941,7 +1399,16 @@ async function initDetailPage() {
 
     const priceEl = document.querySelector('.price-main');
     if (priceEl) {
-      if (product.discountPrice && product.discountPrice < product.price) {
+      const isPreorder = product.availability === 'preorder' || product.preorder;
+      if (!product.price) {
+        // Harga kosong → tampilkan Pre Order ke WhatsApp
+        const waTextPO = encodeURIComponent(`Halo Ine Mebel Jepara, saya tertarik dengan ${product.name}${product.sku ? ` (${product.sku})` : ''}. Berapa harganya dan bagaimana cara pre order?`);
+        priceEl.innerHTML = `<a href="https://wa.me/6285281587738?text=${waTextPO}" target="_blank" rel="noopener noreferrer"
+          class="detail-preorder-link" aria-label="Pre Order ${product.name} via WhatsApp">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+          Pre Order ke WhatsApp
+        </a>`;
+      } else if (product.discountPrice && product.discountPrice < product.price) {
         priceEl.innerHTML = `${formatRupiah(product.discountPrice)} <span style="text-decoration:line-through;color:var(--text-muted);font-size:0.7em;margin-left:0.5rem;">${formatRupiah(product.price)}</span>`;
       } else {
         priceEl.textContent = formatRupiah(product.price);
@@ -980,10 +1447,23 @@ async function initDetailPage() {
     const garansiEl = document.getElementById('spec-garansi');
     if (garansiEl) garansiEl.textContent = product.garansi || '-';
 
+    renderPreOrderFacts(product);
+
+    // Tombol pesan utama: pesan WhatsApp sudah terisi nama produk + SKU.
+    // Pengunjung baru tidak perlu mengetik apa pun.
+    const waBtn = document.getElementById('product-wa-order-btn');
+    if (waBtn) {
+      const msg = encodeURIComponent(
+        `Halo Ine Mebel Jepara, saya mau pesan ${product.name}${product.sku ? ` (${product.sku})` : ''}. Apakah stoknya tersedia?`
+      );
+      waBtn.href = `https://wa.me/6285281587738?text=${msg}`;
+      waBtn.setAttribute('aria-label', `Pesan ${product.name} lewat WhatsApp`);
+    }
+
     const consultLink = document.querySelector('.consult-cta a');
     if (consultLink) {
       const msg = encodeURIComponent(`Halo, saya tertarik dengan ${product.name}. Bisa minta info lebih lanjut?`);
-      consultLink.href = `https://wa.me/6283114241995?text=${msg}`;
+      consultLink.href = `https://wa.me/6285281587738?text=${msg}`;
     }
 
     const relatedGrid = document.getElementById('related-grid');
@@ -998,9 +1478,6 @@ async function initDetailPage() {
         relatedGrid.innerHTML = '<p class="empty-state">Tidak ada produk terkait lainnya.</p>';
       }
     }
-
-    // Muat ulasan produk ini dari API.
-    loadProductReviews(product);
 
     // Tampilkan konten hanya setelah semuanya terisi.
     showDetailContent(true);
@@ -1037,56 +1514,117 @@ async function initDetailPage() {
 }
 
 /* ===============================================================
-   ULASAN PRODUK (detail.html) - diambil dari API /api/reviews
+   SEBELUM PESAN + STICKY ORDER BAR (detail.html)
+   Pembeli baru ragu soal ukuran, perakitan, dan berat.
+   Jawab di halaman, jangan paksa mereka chat dulu.
    =============================================================== */
-function renderStars(rating) {
-  const full = Math.round(Number(rating) || 0);
-  return '★★★★★'.slice(0, full) + '☆☆☆☆☆'.slice(0, 5 - full);
-}
+function renderPreOrderFacts(product) {
+  const wrap = document.getElementById('pre-order-facts');
+  if (!wrap) return;
 
-function formatReviewDate(value) {
-  if (!value) return '';
-  const d = new Date(String(value).replace(' ', 'T'));
-  if (isNaN(d.getTime())) return '';
-  try {
-    return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-  } catch { return ''; }
-}
+  const p = Number(product.dimensiPanjang) || 0;
+  const l = Number(product.dimensiLebar) || 0;
+  const t = Number(product.dimensiTinggi) || 0;
 
-async function loadProductReviews(product) {
-  const listWrap = document.getElementById('reviews-list');
-  if (!listWrap) return;
-
-  let data = null;
-  try {
-    const res = await fetch(`${API_BASE}/reviews?product_id=${encodeURIComponent(product.id)}`, {
-      headers: { Accept: 'application/json' },
-    });
-    data = await res.json();
-  } catch (err) {
-    console.error('Gagal memuat ulasan:', err);
+  const ruang = document.getElementById('fact-ruang');
+  if (ruang) {
+    if (p && l && t) {
+      // Ruang gerak minimal 60cm di tiap sisi supaya tidak terasa sesak.
+      ruang.textContent = `Butuh ruang sekitar ${p + 60} x ${l + 60} cm, termasuk sisa gerak ${60} cm di tiap sisi.`;
+    } else {
+      ruang.textContent = 'Ukuran detail belum dicatat. Tanya kami lewat WhatsApp.';
+    }
   }
 
-  const reviews = (data && data.success && Array.isArray(data.reviews)) ? data.reviews : [];
-
-  if (!reviews.length) {
-    listWrap.innerHTML = '<p class="empty-state">Belum ada ulasan untuk produk ini.</p>';
-    return;
+  const rakit = document.getElementById('fact-rakit');
+  if (rakit) {
+    const sudah = (product.perakitan || '').toLowerCase();
+    rakit.textContent = sudah === 'sudah'
+      ? 'Datang sudah terpasang. Tidak perlu bongkar-pasang sendiri.'
+      : sudah === 'belum'
+        ? 'Dikirim terurai. Kami sertakan panduan dan video pasang.'
+        : 'Tanya kami soal perakitan sebelum pesan.';
   }
 
-  listWrap.innerHTML = reviews.map((r) => `
-    <article class="review-item">
-      <header class="review-item__head">
-        <span class="review-item__avatar" aria-hidden="true">${escapeHTML((r.name || '?').charAt(0).toUpperCase())}</span>
-        <div>
-          <strong class="review-item__name">${escapeHTML(r.name)}</strong>
-          <span class="review-item__stars" aria-label="Rating ${r.rating} dari 5">${renderStars(r.rating)}</span>
-        </div>
-        <time class="review-item__date">${escapeHTML(formatReviewDate(r.createdAt))}</time>
-      </header>
-      <p class="review-item__text">${escapeHTML(r.comment)}</p>
-    </article>
-  `).join('');
+  const berat = document.getElementById('fact-berat');
+  if (berat) {
+    const kg = Number(product.berat) || 0;
+    const beban = Number(product.kapasitasBeban) || 0;
+    const parts = [];
+    if (kg) parts.push(`${kg} kg`);
+    if (beban) parts.push(`kuat menahan sampai ${beban} kg`);
+    berat.textContent = parts.length
+      ? parts.join(', ') + '. Dua orang cukup untuk mengangkat.'
+      : 'Tanya kami soal berat dan cara angkat.';
+  }
+
+  const kayu = document.getElementById('fact-kayu');
+  if (kayu) {
+    const parts = [];
+    if (product.woodType) parts.push(`kayu ${String(product.woodType).toLowerCase()}`);
+    if (product.finishing) parts.push(`finishing ${String(product.finishing).toLowerCase()}`);
+    if (product.warna) parts.push(`pilihan warna: ${product.warna}`);
+    kayu.textContent = parts.length ? parts.join(' · ') : 'Tanya kami soal material.';
+  }
+
+  wrap.hidden = false;
+
+  initStickyOrder(product);
+}
+
+function initStickyOrder(product) {
+  const bar = document.getElementById('sticky-order');
+  if (!bar) return;
+
+  const nameEl = document.getElementById('sticky-order-name');
+  const priceEl = document.getElementById('sticky-order-price');
+  const btn = document.getElementById('sticky-order-btn');
+
+  const displayPrice = (product.discountPrice && product.discountPrice < product.price)
+    ? product.discountPrice : product.price;
+
+  if (nameEl) nameEl.textContent = product.name;
+  if (priceEl) {
+    priceEl.textContent = displayPrice
+      ? formatRupiah(displayPrice)
+      : 'Pre Order';
+  }
+  if (btn) {
+    const msg = encodeURIComponent(
+      `Halo Ine Mebel Jepara, saya mau pesan ${product.name}${product.sku ? ` (${product.sku})` : ''}. Apakah stoknya tersedia?`
+    );
+    btn.href = `https://wa.me/6285281587738?text=${msg}`;
+    btn.setAttribute('aria-label', `Pesan ${product.name} lewat WhatsApp`);
+  }
+
+  // Bar pesan selalu tampil di mobile (CSS @media yang atur) dan disembunyikan
+  // di desktop. Tanpa logika scroll: pembeli baru tidak pernah kehilangan CTA.
+  bar.hidden = false;
+}
+
+/* ===============================================================
+   CATALOG HINT — tombol X untuk menyembunyikan banner sementara
+   Disimpan di sessionStorage: hilang saat tab ditutup, kembali lagi
+   di kunjungan berikutnya (bukan permanen, sesuai permintaan).
+   =============================================================== */
+const HINT_KEY = 'imj_hint_hidden';
+
+function initCatalogHint() {
+  const banner = document.getElementById('catalog-hint-banner');
+  const closeBtn = document.getElementById('catalog-hint-close');
+  if (!banner || !closeBtn) return;
+
+  try {
+    if (sessionStorage.getItem(HINT_KEY) === '1') {
+      banner.hidden = true;
+      return;
+    }
+  } catch { /* private mode: banner tetap tampil */ }
+
+  closeBtn.addEventListener('click', () => {
+    banner.hidden = true;
+    try { sessionStorage.setItem(HINT_KEY, '1'); } catch { /* abaikan */ }
+  });
 }
 
 /* ===============================================================
@@ -1096,6 +1634,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 1. Init UI non-data dulu (navbar, menu, dll) — tanpa intro
   initNavbar();
   initMobileMenu();
+  initCatalogHint();
   initWishlistPanel();
   initFAB();
   initParallaxEffects();
@@ -1103,8 +1642,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 2. Tampilkan loading state pada grid yang ada
   const featuredGrid = document.getElementById('featured-grid');
   const catalogGrid  = document.getElementById('catalog-grid');
-  if (featuredGrid) featuredGrid.innerHTML = '<p class="empty-state">Memuat produk...</p>';
-  if (catalogGrid)  catalogGrid.innerHTML  = '<p class="empty-state">Memuat produk...</p>';
+  const skeletonHTML = Array.from({ length: 6 }, () => `
+    <div class="skeleton-card" aria-hidden="true">
+      <div class="skeleton skeleton-card__img"></div>
+      <div class="skeleton-card__body">
+        <div class="skeleton skeleton-line skeleton-line--sm"></div>
+        <div class="skeleton skeleton-line skeleton-line--lg"></div>
+        <div class="skeleton skeleton-line skeleton-line--md"></div>
+      </div>
+    </div>`).join('');
+  if (featuredGrid) featuredGrid.innerHTML = skeletonHTML;
+  if (catalogGrid)  catalogGrid.innerHTML  = skeletonHTML;
 
   // 3. Muat data produk DULU (await), baru render
   trackPageView(document.body.dataset.page || 'site');
@@ -1115,7 +1663,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // 4. Baru render grid setelah data siap
-  initFeaturedGrid();
+  initSegControl();
+  initRecoSearch();
+  initCategoryTriggers();
+  renderRecommendations();
+  syncProductCounts();   // angka kategori: 3 kursi, 3 meja, 2 sofa, 3 lemari
+  renderCtaStat();
+
+  // Auto-morph sekali: tunjukkan ada animasi, lalu kembalikan ke pilihan
+  // user dan berhenti. Tidak menulis state rekomendasi.
+  if (window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+    setTimeout(() => {
+      const seg = document.getElementById('seg-control');
+      const active = seg?.querySelector('.seg__btn[aria-checked="true"]');
+      const other  = seg?.querySelector('.seg__btn[aria-checked="false"]');
+      if (!active || !other) return;
+      _suppressReco = true;
+      other.click();
+      setTimeout(() => { active.click(); _suppressReco = false; }, 2600);
+    }, 2500);
+  }
+
   initCatalogPage();
   try {
     await initDetailPage();

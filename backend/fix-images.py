@@ -27,7 +27,7 @@ def main():
         print(f"  sisa unsplash diganti default: {cur.rowcount} baris")
 
         # 2) Gambar yang menunjuk file hilang -> pakai gambar default.
-        base = os.path.dirname(os.path.abspath(__file__))
+        base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # root proyek
         cur.execute("SELECT id, sku, img FROM products")
         for row in cur.fetchall():
             path = row["img"] or ""

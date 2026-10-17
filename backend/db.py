@@ -91,9 +91,9 @@ CREATE TABLE IF NOT EXISTS products (
   category        ENUM('kursi','meja','sofa','lemari','aksesori','tempat_tidur') NOT NULL,
   subcategory     VARCHAR(100)  NOT NULL DEFAULT '',
   brand           VARCHAR(120)  NOT NULL DEFAULT '',
-  price           INT UNSIGNED  NOT NULL,
+  price           INT UNSIGNED  NULL,
   discount_price  INT UNSIGNED  NULL,
-  stock           INT UNSIGNED  NOT NULL DEFAULT 0,
+  stock           INT UNSIGNED  NULL,
   description     TEXT          NOT NULL,
   img             VARCHAR(500)  NOT NULL DEFAULT '',
   img_alt         VARCHAR(200)  NOT NULL DEFAULT '',
@@ -115,6 +115,7 @@ CREATE TABLE IF NOT EXISTS products (
   relasi_tipe     VARCHAR(60)   NOT NULL DEFAULT '',
   tags            VARCHAR(300)  NOT NULL DEFAULT '',
   status          ENUM('aktif','nonaktif','draft') NOT NULL DEFAULT 'aktif',
+  availability    ENUM('ready','preorder') NOT NULL DEFAULT 'ready',
   created_at      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
                               ON UPDATE CURRENT_TIMESTAMP,
@@ -150,6 +151,7 @@ MIGRATIONS = {
     "relasi_tipe":     "VARCHAR(60) NOT NULL DEFAULT '' AFTER pelengkap",
     "tags":            "VARCHAR(300) NOT NULL DEFAULT '' AFTER relasi_tipe",
     "status":          "ENUM('aktif','nonaktif','draft') NOT NULL DEFAULT 'aktif' AFTER tags",
+    "availability":    "ENUM('ready','preorder') NOT NULL DEFAULT 'ready' AFTER status",
 }
 
 
@@ -180,6 +182,13 @@ def ensure_schema():
                 "UPDATE products SET status = 'aktif' "
                 "WHERE status IS NULL OR status = ''"
             )
+            # Harga & stok dibuat NULLABLE (opsional / Pre Order)
+            for col, ddl in (
+                ("price", "INT UNSIGNED NULL"),
+                ("stock", "INT UNSIGNED NULL"),
+            ):
+                cur.execute(f"ALTER TABLE products MODIFY COLUMN {col} {ddl}")
+
             # Perbaiki path gambar lokal lama
             cur.execute("""
                 UPDATE products
@@ -451,9 +460,9 @@ def row_to_product(row: dict) -> dict:
         "category":        row.get("category") or "",
         "subcategory":     row.get("subcategory") or "",
         "brand":           row.get("brand") or "",
-        "price":           int(row.get("price") or 0),
+        "price":           int(row["price"]) if row.get("price") is not None else None,
         "discountPrice":   int(row["discount_price"]) if row.get("discount_price") else None,
-        "stock":           int(row.get("stock") or 0),
+        "stock":           int(row["stock"]) if row.get("stock") is not None else None,
         "desc":            row.get("description") or "",
         "img":             row.get("img") or "",
         "imgAlt":          row.get("img_alt") or "",
@@ -475,6 +484,7 @@ def row_to_product(row: dict) -> dict:
         "relasiTipe":      row.get("relasi_tipe") or "",
         "tags":            [t.strip() for t in (row.get("tags") or "").split(",") if t.strip()],
         "status":          row.get("status") or "aktif",
+        "availability":    row.get("availability") or "ready",
     }
 
 
@@ -581,13 +591,18 @@ def validate_product(body: dict):
     sku = str(body.get("sku") or "").strip()
     category = str(body.get("category") or "").strip()
     desc = str(body.get("desc") or "").strip()
-    price = _digits(body.get("price"))
+    # Harga & stok OPSIONAL: kosong / null berarti "Pre Order ke WhatsApp".
+    price = _digits(body.get("price")) or None
     discount_raw = body.get("discountPrice")
     discount = _digits(discount_raw) if discount_raw else None
-    stock = _digits(body.get("stock"))
+    stock_raw = body.get("stock")
+    stock = _digits(stock_raw) if str(stock_raw or "").strip() != "" else None
     material = str(body.get("material") or "").strip()
     warna = str(body.get("warna") or "").strip()
     status = str(body.get("status") or "aktif").strip()
+    availability = str(body.get("availability") or "ready").strip().lower()
+    if availability not in ("ready", "preorder"):
+        availability = "ready"
 
     errors = []
     if not name:
@@ -598,8 +613,6 @@ def validate_product(body: dict):
         errors.append(f"Kategori tidak valid (pilih: {', '.join(ALLOWED_CATEGORIES)}).")
     if not desc:
         errors.append("Deskripsi wajib diisi.")
-    if price <= 0:
-        errors.append("Harga harus lebih besar dari 0.")
     if not material:
         errors.append("Material wajib diisi.")
     if not warna:
@@ -656,6 +669,7 @@ def validate_product(body: dict):
         "relasi_tipe": str(body.get("relasiTipe") or "").strip(),
         "tags": tags,
         "status": status,
+        "availability": availability,
     }
     return payload, []
 

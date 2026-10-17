@@ -96,16 +96,17 @@ const filterCat      = document.getElementById('admin-filter-cat');
    FIELD REFS (28 field)
    =============================================================== */
 const F = {
-  name:        document.getElementById('field-name'),
-  sku:         document.getElementById('field-sku'),
-  category:    document.getElementById('field-category'),
-  subcategory: document.getElementById('field-subcategory'),
-  brand:       document.getElementById('field-brand'),
-  price:       document.getElementById('field-price'),
-  discount:    document.getElementById('field-discount-price'),
-  stock:       document.getElementById('field-stock'),
-  status:      document.getElementById('field-status'),
-  condition:   document.getElementById('field-condition'),
+  name:         document.getElementById('field-name'),
+  sku:          document.getElementById('field-sku'),
+  category:     document.getElementById('field-category'),
+  subcategory:  document.getElementById('field-subcategory'),
+  brand:        document.getElementById('field-brand'),
+  availability: document.getElementById('field-availability'),
+  price:        document.getElementById('field-price'),
+  discount:     document.getElementById('field-discount-price'),
+  stock:        document.getElementById('field-stock'),
+  status:       document.getElementById('field-status'),
+  condition:    document.getElementById('field-condition'),
   desc:        document.getElementById('field-desc'),
   material:    document.getElementById('field-material'),
   woodType:    document.getElementById('field-wood-type'),
@@ -325,16 +326,21 @@ function renderProductTable() {
           <th scope="col" style="width:110px">Kategori</th>
           <th scope="col" style="width:90px">Stok</th>
           <th scope="col" style="width:100px">Status</th>
-          <th scope="col" style="width:150px">Harga</th>
+          <th scope="col" style="width:160px">Harga</th>
           <th scope="col" style="width:140px">Aksi</th>
         </tr>
       </thead>
       <tbody>
         ${products.map(p => {
+          const isPreorder = p.availability === 'preorder' || p.preorder;
           const harga = p.discountPrice && p.discountPrice < p.price ? p.discountPrice : p.price;
           const diskon = p.discountPrice && p.discountPrice < p.price;
-          const stok = p.stock ?? 0;
-          const stokKelas = stok === 0 ? 'admin-table__stock--out' : (stok <= 5 ? 'admin-table__stock--low' : '');
+          const stok = p.stock ?? null;
+          const stokKelas = stok === 0 ? 'admin-table__stock--out' : (stok !== null && stok <= 5 ? 'admin-table__stock--low' : '');
+          const stokLabel = stok === null ? (isPreorder ? '<em style="opacity:.6">Pre Order</em>' : '-') : stok;
+          const hargaLabel = p.price
+            ? (formatRupiah(harga) + (diskon ? `<span class="admin-table__price-old">${formatRupiah(p.price)}</span>` : ''))
+            : `<span class="admin-table__preorder-label">Pre Order ke WA</span>`;
           return `
           <tr data-product-id="${p.id}">
             <td>
@@ -344,15 +350,13 @@ function renderProductTable() {
             </td>
             <td>
               <strong class="admin-table__name">${escapeHTML(p.name)}</strong>
+              ${isPreorder ? '<span class="admin-badge-po">Pre Order</span>' : ''}
               <span class="admin-table__desc">${escapeHTML(p.sku || '-')} - ${escapeHTML(p.desc)}</span>
             </td>
             <td><span class="cat-badge cat-badge--${escapeAttr(p.category)}">${escapeHTML(p.category)}</span></td>
-            <td><span class="admin-table__stock ${stokKelas}">${stok}</span></td>
+            <td><span class="admin-table__stock ${stokKelas}">${stokLabel}</span></td>
             <td><span class="status-badge status-badge--${escapeAttr(p.status || 'aktif')}">${escapeHTML(p.status || 'aktif')}</span></td>
-            <td class="admin-table__price">
-              ${formatRupiah(harga)}
-              ${diskon ? `<span class="admin-table__price-old">${formatRupiah(p.price)}</span>` : ''}
-            </td>
+            <td class="admin-table__price">${hargaLabel}</td>
             <td class="admin-table__actions">
               <div>
                 <button type="button" class="admin-btn-edit" data-id="${p.id}" aria-label="Edit ${escapeAttr(p.name)}">Edit</button>
@@ -429,9 +433,10 @@ function openEditForm(id) {
   F.category.value    = product.category || '';
   F.subcategory.value = product.subcategory || '';
   F.brand.value       = product.brand || '';
-  F.price.value       = formatPriceDisplay(product.price);
+  if (F.availability) F.availability.value = product.availability || (product.preorder ? 'preorder' : 'ready');
+  F.price.value       = product.price ? formatPriceDisplay(product.price) : '';
   F.discount.value    = product.discountPrice ? formatPriceDisplay(product.discountPrice) : '';
-  F.stock.value       = product.stock || 0;
+  F.stock.value       = (product.stock !== null && product.stock !== undefined && product.stock !== '') ? product.stock : '';
   F.status.value      = product.status || 'aktif';
   F.condition.value   = product.kondisi || 'baru';
   F.desc.value        = product.desc || '';
@@ -471,7 +476,8 @@ function resetForm() {
   if (F.status) F.status.value = 'aktif';
   if (F.condition) F.condition.value = 'baru';
   if (F.perakitan) F.perakitan.value = 'sudah';
-  if (F.stock) F.stock.value = '0';
+  if (F.availability) F.availability.value = 'ready';
+  if (F.stock) F.stock.value = '';
 }
 
 function showFormSection() {
@@ -520,9 +526,10 @@ if (productForm) {
       category:       F.category.value,
       subcategory:    F.subcategory.value.trim(),
       brand:          F.brand.value.trim(),
+      availability:   F.availability ? F.availability.value : 'ready',
       price:          parsePrice(F.price.value),
       discountPrice:  parsePrice(F.discount.value) || null,
-      stock:          parseInt(F.stock.value, 10) || 0,
+      stock:          F.stock.value.trim() !== '' ? (parseInt(F.stock.value, 10) || 0) : null,
       status:         F.status.value,
       kondisi:        F.condition.value,
       desc:           F.desc.value.trim(),
@@ -549,9 +556,11 @@ if (productForm) {
     const mainFile = F.imgFile && F.imgFile.files[0] ? F.imgFile.files[0] : null;
     if (!payload.img && !mainFile) payload.img = DEFAULT_IMG;
 
-    if (!payload.name || !payload.sku || !payload.category || !payload.desc || !payload.price) {
+    // Validasi: harga & stok opsional — hanya nama, sku, kategori, deskripsi yang wajib.
+    // Jika availability = preorder dan harga kosong → tampil "Pre Order ke WhatsApp".
+    if (!payload.name || !payload.sku || !payload.category || !payload.desc) {
       if (formError) {
-        formError.textContent = 'Mohon isi semua field wajib (*).';
+        formError.textContent = 'Mohon isi semua field wajib: Nama, Kategori, dan Deskripsi.';
         formError.hidden = false;
       }
       return;

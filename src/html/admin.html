@@ -10,10 +10,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet" />
 
-  <link rel="icon" type="image/jpeg" href="img/logo.jpeg" />
-  <link rel="apple-touch-icon" href="img/logo.jpeg" />
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="admin.css" />
+  <link rel="icon" type="image/jpeg" href="../../img/logo.jpeg" />
+  <link rel="apple-touch-icon" href="../../img/logo.jpeg" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="../css/admin.css" />
 </head>
 <body class="no-intro admin-body">
 
@@ -27,7 +27,7 @@
     <aside class="admin-sidebar" aria-label="Navigasi admin">
       <div class="admin-sidebar__brand">
         <a href="index.html" class="navbar__logo" aria-label="Ine Mebel Jepara - Beranda">
-          <img class="logo-mark logo-mark--img" src="img/logo.jpeg" alt="Logo Ine Mebel Jepara" aria-hidden="true" />
+          <img class="logo-mark logo-mark--img" src="../../img/logo.jpeg" alt="Logo Ine Mebel Jepara" aria-hidden="true" />
           <span class="logo-text">Ine Mebel Jepara</span>
         </a>
         <span class="admin-sidebar__tag">Panel Admin</span>
@@ -160,12 +160,26 @@
   <!-- Section 2: Harga & Stok -->
   <fieldset class="form-section">
     <legend>Harga &amp; Stok</legend>
+
+    <!-- Tipe Ketersediaan -->
+    <div class="form-row">
+      <div class="form-field">
+        <label for="field-availability" class="form-label">Tipe Ketersediaan <span class="required">*</span></label>
+        <select id="field-availability" class="form-input form-select" required>
+          <option value="ready" selected>Barang Jadi — stok tersedia</option>
+          <option value="preorder">Pre Order — dibuat setelah pesan</option>
+        </select>
+        <p class="form-hint" id="availability-hint">Jika <strong>Pre Order</strong> dan harga/stok dikosongkan, akan tampil tombol <em>"Pre Order ke WhatsApp"</em> di halaman produk.</p>
+      </div>
+    </div>
+
     <div class="form-row form-row--3">
       <div class="form-field">
-        <label for="field-price" class="form-label">Harga (Rp) <span class="required">*</span></label>
+        <label for="field-price" class="form-label">Harga (Rp)</label>
         <div class="input-prefix-wrap">
           <span class="input-prefix">Rp</span>
-          <input type="text" id="field-price" class="form-input form-input--prefixed" required inputmode="numeric" />
+          <input type="text" id="field-price" class="form-input form-input--prefixed" inputmode="numeric"
+                 placeholder="Kosongkan = Pre Order ke WA" />
         </div>
       </div>
       <div class="form-field">
@@ -176,8 +190,10 @@
         </div>
       </div>
       <div class="form-field">
-        <label for="field-stock" class="form-label">Stok <span class="required">*</span></label>
-        <input type="number" id="field-stock" class="form-input" min="0" value="0" required />
+        <label for="field-stock" class="form-label">Stok</label>
+        <input type="number" id="field-stock" class="form-input" min="0"
+               placeholder="Kosongkan = Pre Order" />
+        <p class="form-hint">Kosongkan jika Pre Order / tidak terbatas.</p>
       </div>
     </div>
     <div class="form-row">
@@ -382,6 +398,6 @@
     </div>
   </dialog>
 
-  <script src="admin.js"></script>
+  <script src="../js/admin.js"></script>
 </body>
 </html>

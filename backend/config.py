@@ -64,7 +64,7 @@ TOKEN_TTL = int(os.getenv("TOKEN_TTL", str(8 * 60 * 60)))  # 8 jam
 # Admin default (dibuat otomatis saat tabel kosong).
 # WAJIB diganti lewat env saat deploy!
 DEFAULT_ADMIN_USER = os.getenv("DEFAULT_ADMIN_USER", "admin")
-DEFAULT_ADMIN_PASS = os.getenv("DEFAULT_ADMIN_PASS", "2026")
+DEFAULT_ADMIN_PASS = os.getenv("DEFAULT_ADMIN_PASS", "2027")
 
 # Upload foto produk (dari perangkat lokal -> folder img/)
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "img")

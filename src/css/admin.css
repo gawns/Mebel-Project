@@ -1192,3 +1192,39 @@
   color: #ffffff;
   border-color: transparent;
 }
+
+/* ---------------------------------------------------------------
+   PRE ORDER — Badge & Label tambahan (admin.js)
+   --------------------------------------------------------------- */
+
+/* Badge "Pre Order" kecil di sebelah nama produk pada tabel */
+.admin-badge-po {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffc107;
+  vertical-align: middle;
+  margin-left: 6px;
+  line-height: 1.4;
+}
+
+/* Label harga "Pre Order ke WA" di kolom harga */
+.admin-table__preorder-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #25d366;
+  white-space: nowrap;
+}
+.admin-table__preorder-label::before {
+  content: '💬';
+  font-size: 0.85rem;
+}

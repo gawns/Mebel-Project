@@ -10,16 +10,16 @@ Simpan file ini. Jangan pernah commit password asli ke Git.
 
 | Halaman | URL |
 | --- | --- |
-| Beranda | https://heheheheheheehe-production.up.railway.app/ |
-| Katalog | https://heheheheheheehe-production.up.railway.app/katalog.html |
-| Detail produk | https://heheheheheheehe-production.up.railway.app/detail.html?sku=IMJ-0001 |
-| Panel admin (login) | https://heheheheheheehe-production.up.railway.app/admin.html |
-| Statistik | https://heheheheheheehe-production.up.railway.app/admin-stats.html |
-| Ulasan | https://heheheheheheehe-production.up.railway.app/admin-ulasan.html |
-| Health check | https://heheheheheheehe-production.up.railway.app/api/health |
+| Beranda | https://jeparamebelku.up.railway.app/ |
+| Katalog | https://jeparamebelku.up.railway.app/katalog.html |
+| Detail produk | https://jeparamebelku.up.railway.app/detail.html?sku=IMJ-0001 |
+| Panel admin (login) | https://jeparamebelku.up.railway.app/admin.html |
+| Statistik | https://jeparamebelku.up.railway.app/admin-stats.html |
+| Ulasan | https://jeparamebelku.up.railway.app/admin-ulasan.html |
+| Health check | https://jeparamebelku.up.railway.app/api/health |
 
-Nama service di dashboard Railway: **heheheheheheehe**
-(project: bebas, service: `heheheheheheehe`, plus service MySQL terpisah).
+Nama service di dashboard Railway: **jeparamebelku**
+(project: bebas, service: `jeparamebelku`, plus service MySQL terpisah).
 
 ---
 
@@ -111,18 +111,18 @@ Itu bukan salah perintah, itu memang batasan jaringan privat.
 #### Langkah resmi (lewat Railway Console)
 
 1. Buka https://railway.app → proyek Anda.
-2. Klik **service aplikasi** (`heheheheheheehe`).
+2. Klik **service aplikasi** (`jeparamebelku`).
 3. Buka tab **Console** (ikon terminal `>_`).
 4. Cek dulu database mana yang tersambung:
 
 ```bash
-python -c "import config; print(config.DB_HOST, config.DB_PORT, config.DB_NAME)"
+cd backend && python -c "import config; print(config.DB_HOST, config.DB_PORT, config.DB_NAME)"
 ```
 
 5. Setelah cocok (harus `mysql.railway.internal 3306 ...`), ganti password:
 
 ```bash
-python -c "import db; db.set_admin_password('admin', 'MebelJepara#2026!xY7'); print('OK')"
+cd backend && python -c "import db; db.set_admin_password('admin', 'MebelJepara#2026!xY7'); print('OK')"
 ```
 
 6. Kalau muncul `OK`, login di `/admin.html` dengan:
@@ -140,7 +140,7 @@ $env:MYSQLPORT="<port-publik>"
 $env:MYSQLUSER="root"
 $env:MYSQLPASSWORD="<password dari Variables>"
 $env:MYSQLDATABASE="railway"
-python -c "import db; db.set_admin_password('admin', 'MebelJepara#2026!xY7'); print('OK')"
+cd backend && python -c "import db; db.set_admin_password('admin', 'MebelJepara#2026!xY7'); print('OK')"
 ```
 
 Setelah selesai, sebaiknya Public Networking dimatikan lagi.
@@ -151,11 +151,11 @@ Setelah selesai, sebaiknya Public Networking dimatikan lagi.
 
 | Tujuan | Perintah | Dijalankan di |
 | --- | --- | --- |
-| Cek DB lokal | `python check.db.py` | terminal PC |
-| Isi DB lokal | `python db-init.py` | terminal PC |
-| Perbaiki path gambar | `python fix-images.py` | terminal PC |
-| Jalankan lokal | `python app.py` | terminal PC |
-| Ganti password admin (Railway) | `python -c "import db; db.set_admin_password(...)"` | **Railway Console** |
+| Cek DB lokal | `cd backend && python check.db.py` | terminal PC |
+| Isi DB lokal | `cd backend && python db-init.py` | terminal PC |
+| Perbaiki path gambar | `cd backend && python fix-images.py` | terminal PC |
+| Jalankan lokal | `cd backend && python app.py` | terminal PC |
+| Ganti password admin (Railway) | `cd backend && python -c "import db; db.set_admin_password(...)"` | **Railway Console** |
 | Ambil env Railway ke lokal | `railway run python ...` | terminal PC (tetap gagal untuk DB internal) |
 
 Catatan: `railway run` berguna untuk env yang bisa diakses publik, tapi
@@ -167,7 +167,7 @@ Catatan: `railway run` berguna untuk env yang bisa diakses publik, tapi
 
 ### 5a. Foto upload hilang setiap redeploy (WAJIB)
 
-`app.py:31` menyimpan ke `img/` di filesystem container yang **sementara**.
+`backend/app.py` menyimpan ke `img/` di filesystem container yang **sementara**.
 Setiap redeploy/restart, semua foto yang diunggah **hilang**.
 
 **Perbaikan:** pasang Railway **Volume**:
@@ -178,7 +178,7 @@ Setiap redeploy/restart, semua foto yang diunggah **hilang**.
 3. Redeploy.
 
 Kalau setelah mount gambar justru tidak muncul, berarti mount path salah;
-cocokkan dengan `gunicorn app:app` yang dijalankan dari root repo.
+cocokkan dengan `gunicorn --chdir backend app:app` (app.py ada di `backend/`).
 
 ### 5b. Error tertelan tanpa log (disarankan)
 
@@ -199,7 +199,7 @@ di log Railway.
 {
   "build": { "builder": "NIXPACKS" },
   "deploy": {
-    "startCommand": "gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 60",
+    "startCommand": "gunicorn --chdir backend app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 60",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 60,
     "restartPolicyType": "ON_FAILURE",
@@ -228,7 +228,7 @@ Arti status health:
 - Jangan commit file `.env` (sudah masuk `.gitignore`). Belum ada `.env`
   di repo ini — bagus.
 - `AUTH_SECRET` default `ubah-secret-ini-di-hosting` akan membuat admin
-  panel **diblokir** di produksi (lihat `app.py:221`). Pastikan sudah diganti.
+  panel **diblokir** di produksi (lihat `backend/app.py`). Pastikan sudah diganti.
 - Setelah semuanya berjalan, pertimbangkan mengganti password admin dari
   nilai yang beredar di chat ini.
 

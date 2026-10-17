@@ -1,0 +1,2139 @@
+/* ===============================================================
+   INE MEBEL JEPARA — redesign.css
+   Dimuat SETELAH style.css. Lapisan ini menimpa, tidak menghapus.
+   Tujuan:
+     1. Buang sisa tema "cyber" (scanline, grid, neon, mono)
+     2. Sistem jarak & tipografi yang konsisten
+     3. Jalur pesan 1 klik untuk pengunjung baru
+     4. Visual hangat: kayu + krem, bukan gelap + glow
+   =============================================================== */
+
+/* ---------------------------------------------------------------
+   1. TOKEN — satu sumber kebenaran
+   --------------------------------------------------------------- */
+:root {
+  /* Aksen kayu (dari logo). Dipakai HANYA di: CTA utama, harga, state aktif. */
+  --accent:        #9a4e18;
+  --accent-strong: #7a3d12;
+  --accent-soft:   #f0ddc4;
+  --accent-wash:   rgba(154, 78, 24, 0.08);
+
+  /* Netral hangat */
+  --ink:        #241708;
+  --ink-2:      #5a4227;
+  --ink-3:      #7d6549;
+  --paper:      #fbf7f0;
+  --surface:    #ffffff;
+  --line:       rgba(90, 66, 39, 0.14);
+  --line-2:     rgba(90, 66, 39, 0.26);
+
+  /* Skala jarak 4px — semua padding/margin/gap HARUS dari sini */
+  --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
+  --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px; --s9: 96px;
+
+  /* Bentuk: makin besar makin bulat — bukan kotak */
+  --r-sm: 12px;
+  --r-md: 22px;
+  --r-lg: 34px;
+  --r-xl: 48px;
+  --r-pill: 999px;
+
+  /* Bayangan: 2 level, hangat bukan hitam, tanpa garis border */
+  --sh-1: 0 1px 2px rgba(64, 43, 20, 0.04), 0 6px 18px -6px rgba(64, 43, 20, 0.07);
+  --sh-2: 0 2px 6px rgba(64, 43, 20, 0.05), 0 22px 48px -18px rgba(64, 43, 20, 0.10);
+
+  /* Tipografi: 1 rasio 1.25, 2 keluarga */
+  --fs-xs:  0.8125rem;
+  --fs-sm:  0.9375rem;
+  --fs-md:  1.0625rem;
+  --fs-lg:  1.3125rem;
+  --fs-xl:  1.75rem;
+  --fs-2xl: 2.25rem;
+  --fs-3xl: 3rem;
+
+  /* --- Netralkan nama variabel lama (banyak dipakai style.css) --- */
+  --clr-neon-purple: var(--accent);
+  --clr-neon-pink:   var(--accent-strong);
+  --clr-purple-400:  var(--line-2);
+  --clr-purple-500:  var(--accent);
+  --clr-cyber-dark:  var(--surface);
+  --clr-white:       #ffffff;
+
+  /* Gradient "cyber" jadi warna solid — mematikan efek neon di 15 tempat sekaligus */
+  --gradient-cyber:  var(--accent);
+  --gradient-brand:  var(--accent);
+  --gradient-glow:   none;
+  --gradient-soft:   var(--accent-wash);
+  --gradient-card:   var(--surface);
+  --gradient-dark:   var(--paper);
+
+  /* Bayangan lama: hangat & lembut, bukan glow */
+  --shadow-glow:    var(--sh-2);
+  --shadow-glow-sm: var(--sh-1);
+  --shadow-card:    var(--sh-1);
+
+  /* Teks: pakai skala baru */
+  --text-primary:   var(--ink);
+  --text-secondary: var(--ink-2);
+  --text-muted:     var(--ink-3);
+  --bg-page:        var(--paper);
+  --bg-card:        var(--surface);
+  --bg-soft:        #f5ede0;
+  --border-subtle:  var(--line);
+  --border-strong:  var(--line-2);
+
+  /* Mono dihapus — label kecil pakai sans dengan tracking */
+  --font-code: var(--font-body);
+
+  /* Space Grotesk adalah font tech — tidak cocok untuk mebel.
+     Playfair Display sudah dimuat di <head> sejak awal, pakai itu. */
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-serif:   'Playfair Display', Georgia, serif;
+
+  --t-fast: 140ms cubic-bezier(0.4, 0, 0.2, 1);
+  --t-base: 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  --t-slow: 340ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---------------------------------------------------------------
+   2. BUANG ARTEFAK TEMA LAMA
+   --------------------------------------------------------------- */
+/* Grid overlay + scanline animasi = bekas tema cyberpunk */
+body::before,
+body::after { display: none !important; }
+
+body {
+  background: var(--paper);
+  background-image: none;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Eyebrow bergaya terminal ">_" — tidak relevan untuk mebel */
+.hero__eyebrow::before { content: none; }
+
+/* Filter status internal (draft/nonaktif) bukan urusan pembeli */
+.status-pills { display: none !important; }
+
+/* ---------------------------------------------------------------
+   3. TIPOGRAFI & SEKSI
+   --------------------------------------------------------------- */
+.container { width: min(100%, 1180px); padding-inline: clamp(16px, 5vw, 40px); }
+
+.section-heading {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3.2vw, 2.25rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+.section-sub {
+  margin-top: var(--s2);
+  font-size: var(--fs-md);
+  color: var(--ink-3);
+  max-width: 56ch;
+  line-height: 1.6;
+}
+
+.section-header { margin-bottom: var(--s6); }
+
+.link-cta {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--accent);
+  gap: var(--s1);
+}
+.link-cta:hover { color: var(--accent-strong); text-shadow: none; }
+.link-cta::after { content: '→'; transition: transform var(--t-fast); display: inline-block; }
+.link-cta:hover::after { transform: translateX(3px); }
+
+/* Ritme vertikal: tiap seksi dapat napas yang sama */
+
+/* ---------------------------------------------------------------
+   4. TOMBOL — 1 aksen, 3 bentuk
+   --------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  padding: 12px 22px;
+  min-height: 46px;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0;
+  border: 1px solid transparent;
+  transition: transform var(--t-fast), box-shadow var(--t-fast),
+              background-color var(--t-fast), border-color var(--t-fast);
+}
+.btn:hover  { transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+
+.btn--primary {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: var(--sh-1);
+}
+.btn--primary:hover {
+  background: var(--accent-strong);
+  box-shadow: var(--sh-2);
+  transform: translateY(-1px);
+}
+
+.btn--secondary,
+.btn--outline {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line-2);
+}
+.btn--secondary:hover,
+.btn--outline:hover {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+  background: var(--accent-wash);
+}
+
+.btn--white { background: #fff; color: var(--ink); }
+.btn--white:hover { background: #fff; box-shadow: var(--sh-2); }
+.btn--outline-white {
+  background: transparent;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.55);
+}
+.btn--outline-white:hover { background: rgba(255, 255, 255, 0.14); border-color: #fff; }
+
+.btn--lg { padding: 14px 26px; min-height: 52px; font-size: var(--fs-md); }
+
+/* Fokus keyboard harus kelihatan — bukan default, tapi jelas */
+:where(a, button, input, select, summary):focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* ---------------------------------------------------------------
+   5. NAVBAR
+   --------------------------------------------------------------- */
+.navbar { height: 68px; --navbar-h: 68px; }
+.navbar.navbar--solid,
+.navbar.scrolled {
+  background: rgba(251, 247, 240, 0.92);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  box-shadow: 0 1px 0 var(--line);
+}
+.navbar__inner { gap: var(--s5); }
+.logo-mark { border-radius: 8px; box-shadow: none; }
+.logo-text { font-size: 1rem; font-weight: 600; }
+.navbar__nav ul { gap: var(--s5); }
+.navbar__nav a {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  padding-block: 12px;      /* target sentuh >= 44px */
+  display: inline-block;
+}
+.navbar__nav a::after { background: var(--accent); height: 2px; }
+.nav-icon {
+  color: var(--ink-2);
+  width: 44px; height: 44px;
+  display: grid; place-items: center;
+  border-radius: var(--r-sm);
+  transition: color var(--t-fast), background-color var(--t-fast);
+}
+.nav-icon:hover { color: var(--accent); background: var(--accent-wash); filter: none; }
+
+/* Badge wishlist */
+.wishlist-badge {
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-body);
+  font-weight: 700;
+}
+
+.wishlist-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-2);
+}
+.wishlist-panel__title { font-size: var(--fs-sm); font-weight: 600; }
+
+/* ---------------------------------------------------------------
+   6. HERO — foto besar, teks jelas, tanpa orbs
+   --------------------------------------------------------------- */
+.hero {
+  padding-top: calc(var(--navbar-h) + clamp(24px, 5vw, 56px));
+  padding-bottom: clamp(40px, 7vw, 80px);
+  background: linear-gradient(180deg, #f7efe2 0%, var(--paper) 100%);
+  overflow: visible;
+}
+.hero::before, .hero::after { display: none !important; }
+
+.hero__inner {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: clamp(24px, 5vw, 64px);
+  align-items: center;
+  padding-block: 0;
+}
+
+.hero__text { gap: var(--s4); }
+
+.hero__eyebrow {
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  background: var(--accent-soft);
+  border: 1px solid rgba(154, 78, 24, 0.16);
+  backdrop-filter: none;
+}
+
+.hero__headline {
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 4.5vw, 3.5rem);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+}
+.hero__headline em {
+  font-style: italic;
+  font-weight: 400;
+  color: #8a5a3a;
+  display: inline-block;
+}
+
+.hero__desc {
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  max-width: 42ch;
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3);
+  margin-top: var(--s2);
+}
+
+/* Scene hero: blok absolut, bukan foto. Tiga animasi bernama:
+   1. layout morph  — .blk transisi left/top/width/height/radius/transform 800ms
+   2. stroke draw   — .scene__line dashoffset 1 -> 0
+   3. gerak         — @keyframes swing / bob / floaty
+   Semua koordinat persen supaya tidak meleset di aspect ratio lain. */
+.hero__img-wrap {
+  transform: rotate(2.5deg);
+  border-radius: var(--r-xl);
+  border: 0;
+  box-shadow: var(--sh-2);
+  overflow: hidden;
+  position: relative;
+  background: #F6FAF7;
+  transition: transform 220ms ease, box-shadow 220ms ease;
+  will-change: transform;
+}
+
+.scene {
+  width: 100%;
+  aspect-ratio: 5 / 4;
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(to bottom, #f4e9d3 0 82%, #dcc29c 82% 100%);
+}
+
+/* 2. STROKE DRAW — garis lantai & kabel lampu */
+.scene__lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+.scene__line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 0.45;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 1200ms cubic-bezier(0.22, 0.61, 0.36, 1) 400ms;
+}
+.scene__line--cord { stroke: var(--ink-3); stroke-width: 0.3; }
+.scene[data-drawn="1"] .scene__line { stroke-dashoffset: 0; }
+
+/* Kaki meja: dua batang dari tepi bawah tabletop.
+   --leg diatur per state; transisi ikut morph 800ms. */
+.table::before,
+.table::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  width: 9%;
+  height: var(--leg, 40%);
+  background: linear-gradient(180deg, #4a2610 0%, #3d1f0a 100%);
+  border-radius: 0 0 3px 3px;
+  transition: height 800ms cubic-bezier(0.7, 0, 0.2, 1);
+}
+.table::before { left: 10%; }
+.table::after  { right: 10%; }
+
+/* Sandaran kursi: dua tiang + palang atas. */
+.chair::before,
+.chair::after {
+  content: "";
+  position: absolute;
+  background: #7a3d12;
+  border-radius: 4px;
+}
+.chair::before { left: 0; top: 0; width: 20%; height: 100%; }
+.chair::after  { left: 0; top: 52%; width: 100%; height: 14%; }
+
+/* Blok dasar. 1. LAYOUT MORPH */
+.part {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transition:
+    left   800ms cubic-bezier(0.7, 0, 0.2, 1),
+    top    800ms cubic-bezier(0.7, 0, 0.2, 1),
+    width  800ms cubic-bezier(0.7, 0, 0.2, 1),
+    height 800ms cubic-bezier(0.7, 0, 0.2, 1),
+    border-radius 800ms ease,
+    background 800ms ease,
+    transform 800ms cubic-bezier(0.7, 0, 0.2, 1);
+  will-change: left, top, width, height, transform;
+}
+
+/* --- RUANG TAMU (state default): sofa besar, meja kopi, lampu --- */
+.scene[data-state="tamu"] .sofa  { left: 8%; top: 54%; width: 50%; height: 26%; background: #8a3b24; border-radius: 22px 22px 8px 8px; box-shadow: inset 0 22px 0 rgba(0,0,0,0.16); }
+.scene[data-state="tamu"] .table { --leg: 45%; left: 64%; top: 70%; width: 22%; height: 10%; background: #5c2e0e; border-radius: 6px; }
+.scene[data-state="tamu"] .chair { left: 33%; top: 56%; width: 8%; height: 24%; background: #7a3d12; border-radius: 4px; opacity: 0; transform: scale(0.6); transform-origin: 50% 100%; }
+.scene[data-state="tamu"] .chair--b { opacity: 0; transform: scale(0.6); }
+.scene[data-state="tamu"] .lamp  { left: 67%; top: 14%; width: 14%; height: 8%; background: #e8a35c; border-radius: 999px 999px 6px 6px; box-shadow: 0 18px 44px 8px rgba(255,214,150,0.7); }
+.scene[data-state="tamu"] .rug   { left: 8%; top: 79%; width: 72%; height: 11%; background: #b8601f; opacity: 0.8; border-radius: 50%; }
+
+/* --- RUANG MAKAN: meja panjang dominan, 2 kursi, lampu lebih tinggi --- */
+.scene[data-state="makan"] .table {
+  /* Kaki berhenti di garis lantai (82% tinggi scene).
+     top 48% + table 9% = 57%; sisa ke lantai = 25% scene.
+     25% scene / 9% table = 278% tinggi tabletop. */
+  --leg: 278%;
+  left: 26%; top: 48%; width: 48%; height: 9%;
+  background: #5c2e0e;
+  border-radius: 5px;
+  box-shadow: inset 0 3px 0 rgba(255,255,255,0.10), 0 6px 14px -6px rgba(61,31,10,0.45);
+}
+.scene[data-state="makan"] .chair {
+  left: 17%; top: 55.2%; width: 7%; height: 30%;
+  background: #7a3d12; border-radius: 4px;
+  opacity: 1; transform: scale(1); transform-origin: 50% 100%;
+}
+.scene[data-state="makan"] .chair--b {
+  left: 76%; top: 52%; width: 7%; height: 30%;
+  background: #8a4a1a;
+  transform: scale(1);
+}
+.scene[data-state="makan"] .sofa  { left: 2%; top: 58%; width: 12%; height: 22%; background: #6a3512; border-radius: 6px 6px 3px 3px; box-shadow: none; }
+.scene[data-state="makan"] .lamp  { left: 38%; top: 12%; width: 24%; height: 8%; background: #e8a35c; border-radius: 999px 999px 6px 6px; box-shadow: 0 18px 44px 8px rgba(255,214,150,0.7); }
+.scene[data-state="makan"] .rug   { left: 14%; top: 79%; width: 72%; height: 11%; background: #b8601f; opacity: 0.8; border-radius: 50%; }
+
+/* 3. GERAK — hanya aktif setelah state dipilih, tidak mengganggu baca */
+.scene .lamp  { transform-origin: 50% 0; }
+.scene[data-motion="1"] .lamp  { animation: swing   3.4s ease-in-out infinite alternate; }
+.scene[data-motion="1"] .sofa  { animation: bob     1.9s ease-in-out infinite alternate; }
+.scene[data-motion="1"] .table { animation: floaty  2.7s ease-in-out 0.4s infinite alternate; }
+
+@keyframes swing  { from { transform: rotate(-3.5deg); } to { transform: rotate(3.5deg); } }
+@keyframes bob    { from { transform: translateY(0); }    to { transform: translateY(-5px); } }
+@keyframes floaty { from { transform: translateY(0); }    to { transform: translateY(-8px); } }
+
+.hero__scroll { display: none; }
+
+/* ---------------------------------------------------------------
+   7. CHIPS — 3 fakta ringkas di dalam section Cara Pesan
+   --------------------------------------------------------------- */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-block: var(--s5) var(--s4);
+  padding: 0;
+  list-style: none;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  box-shadow: var(--sh-1);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.chip svg { color: var(--accent); flex-shrink: 0; }
+
+/* ---------------------------------------------------------------
+   7b. SECTION = SATU LAYAR PENUH
+   Pakai svh, bukan vh: address bar mobile tidak bikin lompat.
+   --------------------------------------------------------------- */
+.hero,
+.categories,
+.featured,
+.how-to-order,
+.about,
+.cta-section,
+.contact-section {
+  min-height: 100vh;      /* fallback browser lama */
+  min-height: 100svh;
+  display: grid;
+  align-content: center;
+  padding-block: clamp(56px, 8vw, 112px);
+}
+
+/* Section berisi foto full-bleed wajib clip: img CTA di-scale 1.04
+   dan tanpa ini bocor 14px ke kanan (horizontal scroll). */
+.cta-section { overflow: hidden; }
+/* Sisanya tidak clip, supaya konten tidak terpotong di layar pendek. */
+.hero, .categories, .featured, .how-to-order, .about, .contact-section {
+  overflow: visible;
+}
+
+/* Contact: padding lebih rapat + 4 kolom di layar lebar supaya
+   4 kartu muat satu baris = satu layar. */
+.contact-section { padding-block: clamp(48px, 6vw, 80px); }
+@media (min-width: 1280px) {
+  .contact-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Section dengan latar foto: sedikit kurang dari 1 layar supaya
+   footer mengintip dan user tahu masih ada konten. */
+.cta-section,
+.contact-section { min-height: 92vh; min-height: 92svh; }
+
+/* Latar bergantian: bukan kotak, tapi bidang dengan sudut organik */
+.categories,
+.how-to-order,
+.contact-section {
+  background: var(--bg-soft);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+}
+.about,
+.cta-section {
+  background: var(--surface);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+}
+
+/* Di layar pendek, konten bisa lebih tinggi dari layar:
+   rata atas supaya tidak terpotong. */
+@media (max-height: 720px) {
+  .hero, .categories, .featured, .how-to-order,
+  .about, .cta-section, .contact-section { align-content: start; }
+}
+
+/* ---------------------------------------------------------------
+   8. KATEGORI
+   --------------------------------------------------------------- */
+.categories { background: transparent; }
+.categories__grid { gap: var(--s4); margin-top: 0; }
+
+.cat-card {
+  aspect-ratio: 4 / 5;
+  min-height: 0;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  box-shadow: var(--sh-1);
+  transition: transform var(--t-base), box-shadow var(--t-base);
+}
+.cat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--sh-2);
+  border-color: var(--line-2);
+}
+.cat-card__img-wrap img { transform: none; transition: transform 600ms cubic-bezier(0.22, 0.61, 0.36, 1); }
+.cat-card:hover .cat-card__img-wrap img { transform: scale(1.05); filter: none; }
+.cat-card__img-wrap::after { display: none; }
+
+/* Kartu kategori terpilih: satu cincin aksen, bukan border tebal */
+.cat-card.is-selected {
+  box-shadow: 0 0 0 3px var(--accent), var(--sh-2);
+}
+.cat-card.is-selected .cat-card__count {
+  background: var(--accent);
+  color: #fff;
+}
+
+.cat-card__info {
+  background: linear-gradient(to top, rgba(18, 10, 4, 0.90) 0%, rgba(18, 10, 4, 0.55) 34%, rgba(18, 10, 4, 0.10) 62%, transparent 80%);
+  padding: var(--s4);
+}
+.cat-card__name {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
+}
+.cat-card__count {
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--ink);          /* teks gelap di chip putih = kontras ~14:1 */
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: var(--r-pill);
+  padding: 2px 10px;
+  margin-top: var(--s2);
+  align-self: flex-start;
+  display: inline-block;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+}
+
+/* ---------------------------------------------------------------
+   9. KARTU PRODUK
+   --------------------------------------------------------------- */
+.product-grid { gap: clamp(16px, 2.2vw, 28px); }
+
+/* Section ini grid 1 kolom; strip scroll di dalamnya bikin kolom
+   implisit melebar ke 1660px dan halaman bisa digeser ke kanan.
+   minmax(0,1fr) mengunci track ke lebar section. */
+.featured, .categories, .hero, .how-to-order, .about, .contact-section {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Featured: section ini isinya lebih banyak (6 kartu + search),
+   jadi padding-nya lebih rapat supaya tetap 1 layar. */
+.featured { padding-block: clamp(40px, 5vw, 64px); }
+.featured .section-header { margin-bottom: var(--s4); }
+
+/* Featured = strip horizontal satu baris.
+   6 kartu dalam grid 3x2 selalu >1 layar (kartu 583px), jadi
+   satu baris dengan scroll-snap: semua 6 tetap ada, section muat
+   1 layar, dan di HP jadi swipe yang wajar. */
+#featured-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: none;   /* batalkan repeat(3,1fr) dari style.css */
+  grid-auto-columns: minmax(240px, 300px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 4px;
+  padding-bottom: var(--s3);
+  /* Ruang untuk scrollbar tipis, tidak memotong shadow kartu */
+  margin-inline: calc(var(--s2) * -1);
+  padding-inline: var(--s2);
+  scrollbar-width: thin;
+}
+#featured-grid > * { scroll-snap-align: start; }
+#featured-grid::-webkit-scrollbar { height: 6px; }
+#featured-grid::-webkit-scrollbar-track { background: var(--line); border-radius: 999px; }
+#featured-grid::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 999px; }
+/* Kartu di strip: gambar lebih pendek supaya total tinggi pas 1 layar */
+#featured-grid .product-card__img-wrap { aspect-ratio: 4 / 3; }
+#featured-grid .product-card__desc {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-card {
+  background: var(--surface);
+  border: 0;
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-1);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  overflow: hidden;
+  transition: transform var(--t-base), box-shadow var(--t-base);
+}
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--sh-2);
+}
+
+.product-card__img-wrap {
+  display: block;
+  aspect-ratio: 4 / 3.4;
+  overflow: hidden;
+  background: var(--bg-soft);
+  position: relative;
+}
+.product-card__img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 600ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.product-card:hover .product-card__img-wrap img { transform: scale(1.04); }
+
+.product-card__body { padding: var(--s4); gap: var(--s2); }
+
+.product-card__cat {
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.product-card__name {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+.product-card__name a {
+  color: var(--ink);
+  display: inline-block;
+  padding-block: 2px;   /* 22px -> 26px, lolos WCAG 2.5.8 target 24px */
+}
+.product-card:hover .product-card__name a { color: var(--accent-strong); }
+
+.product-card__desc {
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+  color: var(--ink-3);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-card__footer {
+  margin-top: var(--s1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--line);
+}
+.product-card__price {
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.product-card__price-original {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  text-decoration: line-through;
+}
+
+.product-card__stock {
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  margin-top: var(--s1);
+}
+.product-card__stock--low { color: #b45309; }
+
+.product-badge {
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  backdrop-filter: none;
+}
+.product-badge--discount { background: #b42318; color: #fff; }
+.product-badge--out      { background: rgba(36, 23, 8, 0.82); color: #fff; }
+
+/* Tombol pesan langsung di kartu — jalur terpendek untuk pengunjung baru */
+.card-order-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+}
+.card-order-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.card-order-btn svg { flex-shrink: 0; }
+
+.wishlist-icon-btn {
+  width: 36px; height: 36px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  display: grid; place-items: center;
+  color: var(--ink-3);
+  transition: color var(--t-fast), border-color var(--t-fast), background-color var(--t-fast);
+}
+.wishlist-icon-btn:hover { color: var(--accent); border-color: var(--line-2); background: var(--accent-wash); }
+.wishlist-icon-btn[aria-pressed="true"] { color: #b42318; border-color: rgba(180, 35, 24, 0.3); background: rgba(180, 35, 24, 0.06); }
+
+/* ---------------------------------------------------------------
+   10. CARA PESAN — 4 langkah, untuk pengunjung baru
+   --------------------------------------------------------------- */
+.how-to-order { background: var(--surface); border-block: 1px solid var(--line); }
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s5);
+  counter-reset: step;
+  margin-top: var(--s6);
+}
+.step {
+  position: relative;
+  padding-top: var(--s6);
+  border-top: 2px solid var(--line);
+}
+.step::before {
+  counter-increment: step;
+  content: counter(step);
+  position: absolute;
+  top: -17px;
+  left: 0;
+  width: 32px; height: 32px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: #fff;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+.step h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: var(--s2);
+  line-height: 1.3;
+}
+.step p { font-size: var(--fs-sm); color: var(--ink-3); line-height: 1.6; }
+
+.how-to-order__foot {
+  margin-top: var(--s6);
+  padding-top: var(--s5);
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+}
+.how-to-order__foot p { font-size: var(--fs-sm); color: var(--ink-3); }
+
+/* ---------------------------------------------------------------
+   11. TENTANG
+   --------------------------------------------------------------- */
+.about__inner { gap: clamp(24px, 5vw, 64px); }
+.about__img-wrap {
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  box-shadow: var(--sh-1);
+}
+.about__img-wrap img { border-radius: 0; }
+.about__label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.about__heading {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.about__body { font-size: var(--fs-md); color: var(--ink-2); line-height: 1.7; max-width: 52ch; }
+
+/* ---------------------------------------------------------------
+   13. CTA PENUTUP
+   --------------------------------------------------------------- */
+.cta-section__bg::after {
+  background: linear-gradient(180deg, rgba(24, 14, 5, 0.72) 0%, rgba(24, 14, 5, 0.82) 100%);
+}
+.cta-section__heading {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3.4vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-shadow: none;
+}
+.cta-section__sub { font-size: var(--fs-md); color: rgba(255, 255, 255, 0.86); text-shadow: none; }
+.cta-section__actions { gap: var(--s3); }
+.cta-section__stat {
+  margin-top: 1.5rem;
+  font-family: var(--font-code);
+  font-size: 0.8125rem;
+  letter-spacing: normal;
+  text-transform: none;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* CTA: dua kolom — teks kiri, kolase 3 foto kanan.
+   Foto bertumpuk miring memperlihatkan variasi produk sekaligus
+   mengisi ruang yang tadinya kosong. */
+.cta-section__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: center;
+  justify-items: start;
+  text-align: left;
+}
+.cta-section__sub { margin-inline: 0; }
+.cta-section__actions { justify-content: flex-start; }
+.cta-collage {
+  position: relative;
+  width: 100%;
+  height: clamp(320px, 38vw, 440px);
+  margin: 0;
+}
+.cta-collage__item {
+  position: absolute;
+  margin: 0;
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.55);
+  background: rgba(255, 255, 255, 0.08);
+}
+.cta-collage__item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.cta-collage__item--a { left: 0; top: 0; width: 46%; height: 100%; z-index: 2; }
+.cta-collage__item--b { right: 0; top: 0; width: 50%; height: 48%; z-index: 3; }
+.cta-collage__item--c { right: 0; bottom: 0; width: 50%; height: 48%; z-index: 1; }
+
+/* ---------------------------------------------------------------
+   14. KONTAK
+   --------------------------------------------------------------- */
+.contact-card {
+  background: var(--surface);
+  border: 0;
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-1);
+  padding: var(--s5);
+  transition: box-shadow var(--t-base), transform var(--t-base);
+}
+.contact-card:hover { box-shadow: var(--sh-1); border-color: var(--line-2); }
+.contact-card--highlight {
+  border-color: rgba(154, 78, 24, 0.34);
+  background: linear-gradient(180deg, #fffaf2, var(--surface));
+}
+.contact-card__icon {
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  border-radius: var(--r-sm);
+  background: var(--accent-wash);
+  color: var(--accent);
+  margin-bottom: var(--s3);
+}
+.contact-card__title { font-size: var(--fs-md); font-weight: 600; color: var(--ink); }
+.contact-card__desc { font-size: var(--fs-sm); color: var(--ink-3); line-height: 1.6; }
+.contact-card__value { font-size: var(--fs-md); font-weight: 600; color: var(--ink); font-style: normal; }
+.contact-card__btn { margin-top: auto; }
+.contact-section__eyebrow {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.contact-section__eyebrow::before { content: none; }
+.text-neon { color: var(--accent); text-shadow: none; }
+
+/* ---------------------------------------------------------------
+   15. FOOTER
+   --------------------------------------------------------------- */
+.footer {
+  background: #221507;
+  color: rgba(255, 255, 255, 0.72);
+  padding-block: var(--s7) 0;
+}
+.footer__logo { color: #fff; font-weight: 600; }
+.footer__tagline { font-size: var(--fs-sm); color: rgba(255, 255, 255, 0.62); line-height: 1.6; }
+.footer__nav-title {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  margin-bottom: var(--s3);
+}
+.footer__nav-group a,
+.footer__contact a {
+  font-size: var(--fs-sm);
+  color: rgba(255, 255, 255, 0.72);
+  display: inline-block;
+  padding-block: 4px;   /* target sentuh lebih besar */
+}
+.footer__nav-group a:hover,
+.footer__contact a:hover { color: #fff; }
+.footer__contact address p { font-size: var(--fs-sm); line-height: 1.65; }
+.footer__social a { color: rgba(255, 255, 255, 0.72); }
+.footer__social a:hover { color: #fff; }
+.footer__bottom { border-top: 1px solid rgba(255, 255, 255, 0.12); margin-top: var(--s7); }
+.footer__bottom-inner { padding-block: var(--s4); font-size: var(--fs-xs); color: rgba(255, 255, 255, 0.5); }
+.footer__admin-link {
+  color: rgba(255, 255, 255, 0.5);
+  display: inline-block;
+  padding-block: 4px;
+  padding-inline: 2px;
+}
+
+/* ---------------------------------------------------------------
+   16. FAB WHATSAPP
+   --------------------------------------------------------------- */
+.fab-whatsapp {
+  background: #1f7a4d;
+  box-shadow: 0 6px 20px rgba(24, 14, 5, 0.22);
+  transition: transform var(--t-fast), box-shadow var(--t-fast), background-color var(--t-fast);
+}
+.fab-whatsapp:hover { background: #186340; transform: translateY(-2px) scale(1.03); box-shadow: 0 10px 28px rgba(24, 14, 5, 0.28); }
+
+/* ---------------------------------------------------------------
+   17. KATALOG
+   --------------------------------------------------------------- */
+.page-hero {
+  padding-top: calc(var(--navbar-h) + var(--s6));
+  padding-bottom: var(--s5);
+  background: linear-gradient(180deg, #f7efe2, var(--paper));
+}
+.page-hero::before { display: none; }
+.page-hero__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3.6vw, 2.5rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.page-hero__sub { font-size: var(--fs-md); color: var(--ink-3); }
+
+.breadcrumb { font-size: var(--fs-xs); color: var(--ink-3); }
+.breadcrumb a:hover { color: var(--accent); }
+.breadcrumb li + li::before { color: var(--line-2); }
+
+.catalog-layout { grid-template-columns: 208px 1fr; gap: clamp(24px, 4vw, 48px); }
+.catalog-section { padding-block: var(--s5) clamp(48px, 8vw, 80px); }
+
+.sidebar-title {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: var(--s3);
+}
+.sidebar-filter-btn {
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+}
+.sidebar-filter-btn:hover { background: var(--accent-wash); color: var(--accent-strong); }
+.sidebar-filter-btn.active {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+.filter-count { font-size: var(--fs-xs); color: var(--ink-3); }
+
+.pill {
+  font-size: var(--fs-sm);
+  padding: 7px 16px;
+  border: 1px solid var(--line-2);
+  color: var(--ink-2);
+  background: var(--surface);
+}
+.pill:hover { border-color: var(--accent); color: var(--accent-strong); box-shadow: none; }
+.pill.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: none;
+}
+
+.catalog-toolbar { margin-bottom: var(--s5); gap: var(--s3); flex-wrap: wrap; }
+.catalog-count { font-size: var(--fs-sm); color: var(--ink-3); }
+.catalog-count strong { color: var(--ink); font-family: var(--font-body); font-weight: 700; }
+.sort-label { font-size: var(--fs-xs); color: var(--ink-3); }
+.sort-select {
+  font-size: var(--fs-xs);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  padding: 7px 10px;
+  background: var(--surface);
+  color: var(--ink);
+  min-height: 36px;
+}
+.sort-select option { background: var(--surface); color: var(--ink); }
+
+/* Hint untuk pengunjung yang belum tahu mau pilih apa */
+.catalog-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-sm);
+  background: var(--accent-wash);
+  margin-bottom: var(--s5);
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+}
+.catalog-hint svg { color: var(--accent); flex-shrink: 0; }
+.catalog-hint a { color: var(--accent-strong); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; display: inline-block; padding: 3px 2px; margin: -3px 0; }
+
+/* ---------------------------------------------------------------
+   18. DETAIL PRODUK
+   --------------------------------------------------------------- */
+.product-detail__inner { gap: clamp(24px, 4.5vw, 56px); }
+.product-gallery__main {
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--bg-soft);
+  box-shadow: var(--sh-1);
+}
+.thumb-btn { border-radius: var(--r-sm); border-width: 2px; }
+.thumb-btn.active { border-color: var(--accent); }
+
+.product-info__code,
+.product-info__category {
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.product-info__name {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.product-info__price .price-main {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--accent-strong);
+  letter-spacing: -0.02em;
+}
+.product-info__desc { font-size: var(--fs-md); line-height: 1.7; color: var(--ink-2); }
+
+.product-specs {
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  background: var(--surface);
+}
+.spec-row {
+  display: grid;
+  grid-template-columns: 40% 1fr;
+  gap: var(--s3);
+  padding: 10px var(--s4);
+  border-bottom: 1px solid var(--line);
+}
+.spec-row:last-child { border-bottom: 0; }
+.spec-row dt { font-size: var(--fs-sm); color: var(--ink-3); }
+.spec-row dd { font-size: var(--fs-sm); color: var(--ink); font-weight: 500; }
+
+.product-actions { margin-top: var(--s4); }
+.product-wa-order-btn { width: 100%; }
+
+.wishlist-btn {
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  padding: 11px var(--s4);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--ink-2);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  transition: border-color var(--t-fast), color var(--t-fast), background-color var(--t-fast);
+}
+.wishlist-btn:hover { border-color: var(--accent); color: var(--accent-strong); background: var(--accent-wash); }
+
+.consult-cta {
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-sm);
+  padding: var(--s4);
+  margin-top: var(--s4);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  background: var(--accent-wash);
+}
+.consult-cta p { font-size: var(--fs-sm); color: var(--ink-2); }
+
+/* Rating ringkas di detail */
+.detail-rating {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  margin-top: var(--s1);
+}
+.detail-rating__stars { color: #b45309; letter-spacing: 1px; }
+.detail-rating__count { color: var(--ink-3); font-size: var(--fs-xs); }
+
+.related-products { border-top: 1px solid var(--line); }
+
+/* ---------------------------------------------------------------
+   19. SKELETON — tahan layout saat memuat
+   --------------------------------------------------------------- */
+.skeleton {
+  background: linear-gradient(100deg, #f0e7d8 30%, #f8f2e7 50%, #f0e7d8 70%);
+  background-size: 240% 100%;
+  animation: skeletonSlide 1.4s ease-in-out infinite;
+  border-radius: var(--r-sm);
+}
+@keyframes skeletonSlide {
+  0%   { background-position: 120% 0; }
+  100% { background-position: -20% 0; }
+}
+.skeleton-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+.skeleton-card__img { aspect-ratio: 4 / 3.4; border-radius: 0; }
+.skeleton-card__body { padding: var(--s4); display: flex; flex-direction: column; gap: 10px; }
+.skeleton-line { height: 11px; }
+.skeleton-line--sm { width: 34%; }
+.skeleton-line--md { width: 72%; }
+.skeleton-line--lg { width: 100%; height: 16px; }
+
+/* Empty state */
+.empty-state {
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+  padding: var(--s7) var(--s4);
+  text-align: center;
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  grid-column: 1 / -1;
+}
+.empty-state a { color: var(--accent-strong); font-weight: 600; text-decoration: underline; }
+
+/* ---------------------------------------------------------------
+   20. REVEAL — masuk halus, sekali, hormati reduced-motion
+   --------------------------------------------------------------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 480ms cubic-bezier(0.22, 0.61, 0.36, 1),
+              transform 480ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.reveal.is-visible { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .skeleton { animation: none; }
+  /* Scene hero: posisi akhir langsung, tanpa gerak sama sekali */
+  .part { transition: none !important; }
+  .scene__line { transition: none !important; stroke-dashoffset: 0 !important; }
+  .scene[data-motion="1"] .lamp,
+  .scene[data-motion="1"] .sofa,
+  .scene[data-motion="1"] .table { animation: none !important; }
+}
+
+/* ---------------------------------------------------------------
+   21. 404
+   --------------------------------------------------------------- */
+.error-page__code {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--accent-soft);
+  letter-spacing: -0.04em;
+}
+.error-page__title { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+.error-page__text { font-size: var(--fs-md); color: var(--ink-3); line-height: 1.65; }
+
+/* ---------------------------------------------------------------
+   22. RESPONSIF
+   --------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .hero__inner { grid-template-columns: 1fr; gap: var(--s6); }
+  .steps { grid-template-columns: repeat(2, 1fr); gap: var(--s5) var(--s4); }
+  .categories__grid { grid-template-columns: repeat(2, 1fr); }
+  .product-grid, #catalog-grid { grid-template-columns: repeat(2, 1fr); }
+  .catalog-layout { grid-template-columns: 1fr; gap: var(--s5); }
+  .catalog-sidebar { position: static; flex-direction: row; flex-wrap: wrap; gap: var(--s5); }
+  .filter-pills { display: flex; }
+  .product-detail__inner { grid-template-columns: 1fr; }
+  .product-gallery { position: static; }
+}
+
+@media (max-width: 900px) {
+  /* CTA: kolase jadi strip horizontal di bawah teks */
+  .cta-section__inner {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+    gap: var(--s6);
+  }
+  .cta-section__sub { margin-inline: auto; }
+  .cta-section__actions { justify-content: center; }
+  .cta-collage { display: none; }
+}
+
+@media (max-width: 640px) {
+  .hero { padding-top: calc(var(--navbar-h) + var(--s5)); }
+  .hero__visual { order: -1; }
+  .hero__img-wrap { transform: rotate(1.5deg); }
+  .scene { aspect-ratio: 16 / 10; }
+  .cta-collage { max-height: 26svh; gap: var(--s2); }
+  .cta-collage__item--c { display: none; } /* 2 foto cukup di layar sempit */
+  .chips { gap: 6px; }
+  .chip { padding: 8px 12px; font-size: 0.75rem; }
+  .hero__headline { font-size: clamp(1.85rem, 8vw, 2.4rem); }
+  .hero__actions .btn { flex: 1 1 auto; }
+  /* 4 langkah di HP: 2x2 supaya section tetap 1 layar */
+  .steps { grid-template-columns: repeat(2, 1fr); gap: var(--s4); }
+  /* Kontak 4 kartu: 2x2. Satu kolom = 1771px = 2 layar.
+     Di kolom 162px, deskripsi tanpa clamp jadi 168px tinggi
+     (teks wrap 8 baris) dan kartu melar 602px. */
+  .contact-grid { grid-template-columns: repeat(2, 1fr); gap: var(--s3); }
+  .contact-card { padding: var(--s3); gap: var(--s2); }
+  .contact-card__icon { width: 34px; height: 34px; }
+  .contact-card__title { font-size: var(--fs-sm); }
+  .contact-card__desc {
+    font-size: var(--fs-xs);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .contact-card__value { font-size: var(--fs-sm); }
+  .contact-card .btn { padding-block: 10px; font-size: var(--fs-xs); }
+  .product-grid, #catalog-grid { grid-template-columns: 1fr; }
+  /* Featured tetap strip horizontal di HP — swipe, bukan 4 layar scroll */
+  #featured-grid {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(200px, 66vw);
+    grid-template-columns: none;
+  }
+  .product-card__body { padding: var(--s3); }
+  .product-card__img-wrap { aspect-ratio: 4 / 3; }
+  .section-heading { font-size: clamp(1.4rem, 6vw, 1.75rem); }
+  .section-header--row { flex-direction: column; align-items: flex-start; gap: var(--s2); }
+  .spec-row { grid-template-columns: 1fr; gap: 2px; }
+  .catalog-toolbar { flex-direction: column; align-items: flex-start; }
+  .catalog-toolbar__controls { width: 100%; justify-content: space-between; }
+  .how-to-order__foot { flex-direction: column; align-items: flex-start; }
+  .footer { padding-top: var(--s6); }
+}
+
+
+/* ===============================================================
+   TARGET SENTUH MINIMUM (WCAG 2.5.8 = 24x24px)
+   Link teks kecil tetap terasa "besar" saat ditekan di HP.
+   =============================================================== */
+.breadcrumb a,
+.breadcrumb__link,
+.footer__nav-group a,
+.footer__contact a,
+.empty-state a,
+.link-inline {
+  display: inline-block;
+  padding-block: 3px;
+}
+
+
+/* ===============================================================
+   SKIP LINK — keyboard user bisa lewati navbar
+   =============================================================== */
+.skip-link {
+  position: absolute;
+  left: var(--s4);
+  top: -60px;
+  z-index: 999;
+  padding: 10px 18px;
+  background: var(--ink-1);
+  color: var(--paper);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  transition: top 140ms ease;
+}
+.skip-link:focus { top: var(--s4); outline: 3px solid var(--accent); outline-offset: 2px; }
+main:focus { outline: none; }
+
+/* ===============================================================
+   EMPTY STATE KATALOG — selalu ada jalan keluar
+   =============================================================== */
+.empty-state--catalog {
+  display: grid;
+  gap: var(--s3);
+  justify-items: start;
+  padding: var(--s6) var(--s5);
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-md);
+  background: var(--paper-2, #fbf7f1);
+  max-width: 46ch;
+}
+.empty-state--catalog strong { font-family: var(--font-display); font-size: 1.15rem; }
+.empty-state--catalog p { color: var(--ink-3); font-size: var(--fs-sm); }
+.empty-state--catalog .btn { margin-top: var(--s2); }
+
+
+/* ===============================================================
+   SEBELUM PESAN — 4 fakta yang ditanya pembeli baru
+   =============================================================== */
+.pre-order-facts {
+  margin-top: var(--s4);
+  padding: var(--s4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--accent-wash);
+}
+.pre-order-facts__title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: var(--s3);
+}
+.pre-order-facts__list { display: grid; gap: var(--s3); }
+.pre-order-fact {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: var(--s2);
+  align-items: start;
+  font-size: var(--fs-sm);
+}
+.pre-order-fact__icon { font-size: 1rem; line-height: 1.4; }
+.pre-order-fact strong { display: block; color: var(--ink); font-weight: 600; }
+.pre-order-fact span:not(.pre-order-fact__icon) { color: var(--ink-2); }
+
+/* ===============================================================
+   STICKY ORDER BAR — hanya mobile, selalu tampil
+   =============================================================== */
+.sticky-order {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 60;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: 10px var(--s4);
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  background: var(--paper);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -6px 20px rgba(38, 26, 16, 0.08);
+  animation: stickyIn 220ms ease-out;
+}
+@keyframes stickyIn { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.sticky-order__info { min-width: 0; display: grid; gap: 1px; }
+.sticky-order__name {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sticky-order__price { font-size: var(--fs-sm); font-weight: 700; color: var(--accent-strong); }
+.sticky-order__btn { padding: 10px 20px; flex-shrink: 0; }
+
+@media (max-width: 720px) {
+  .sticky-order:not([hidden]) { display: flex; }
+  /* FAB digeser naik supaya tidak menutupi tombol pesan */
+  body:has(.sticky-order:not([hidden])) .fab-whatsapp { bottom: 84px; }
+  /* Footer tidak tertutup bar pesan */
+  body:has(.sticky-order:not([hidden])) { padding-bottom: 76px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sticky-order { animation: none; }
+}
+
+
+/* ===============================================================
+   20. SEGMENTED CONTROL (dua sisi) + LAYOUT MORPH
+   ---------------------------------------------------------------
+   Thumb bukan elemen terpisah yang "di-translate". Thumb adalah
+   satu elemen yang MORPH: lebar + posisi + radius ikut tombol aktif,
+   jadi gerakannya terasa seperti satu benda yang mengalir.
+   =============================================================== */
+.seg {
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0;
+  margin-top: var(--s4);
+  padding: var(--s1);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  box-shadow: var(--sh-1);
+  isolation: isolate;
+}
+
+.seg__thumb {
+  position: absolute;
+  z-index: 0;
+  top: var(--s1);
+  left: 0;
+  height: calc(100% - (var(--s1) * 2));
+  /* Lebar & posisi diukur dari tombol aktif oleh JS — morph ikut label asli,
+     bukan asumsi 50%, jadi dua sisi boleh beda panjang. */
+  width: 0;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  box-shadow: 0 2px 8px rgba(122, 61, 18, 0.28);
+  /* Layout morph: posisi + lebar + radius ikut tombol aktif.
+     left/width lebih andal daripada transform untuk elemen yang lebarnya berubah. */
+  transition:
+    left      380ms cubic-bezier(0.34, 1.32, 0.64, 1),
+    width     380ms cubic-bezier(0.34, 1.32, 0.64, 1),
+    border-radius 380ms ease;
+  pointer-events: none;
+}
+.seg__thumb--ready { transition-delay: 0ms; }
+
+.seg__btn {
+  position: relative;
+  z-index: 1;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 10px var(--s4);
+  min-height: 44px;
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--ink-2);
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  transition: color 220ms ease;
+  white-space: nowrap;
+}
+.seg__btn[aria-checked="true"] { color: #fff; }
+.seg__btn:hover:not([aria-checked="true"]) { color: var(--ink); }
+.seg__btn:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* --- Hero stage: dua gambar, satu tampil, crossfade + micro-morph --- */
+.hero__stage { position: relative; }
+.hero__stage .hero__img {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: scale(1.04);
+  transition: opacity 420ms ease, transform 620ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  pointer-events: none;
+}
+.hero__stage .hero__img.is-active {
+  position: relative;
+  opacity: 1;
+  transform: scale(1);
+}
+.hero:hover .hero__stage .hero__img.is-active { transform: scale(1.03); }
+
+/* --- Label alasan rekomendasi --- */
+.section-sub {
+  margin-top: var(--s1);
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+}
+
+/* Kartu rekomendasi: penanda kenapa ia muncul */
+.reco-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: var(--s2);
+  padding: 2px var(--s2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--accent-strong);
+  background: var(--accent-wash);
+  border-radius: var(--r-pill);
+}
+
+@media (max-width: 720px) {
+  .seg { margin-top: var(--s3); }
+  .seg__btn { padding: 10px var(--s3); font-size: var(--fs-xs); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seg__thumb, .hero__stage .hero__img { transition-duration: 1ms; }
+}
+
+/* ===============================================================
+   MOBILE COMPATIBILITY
+   Ditempatkan PALING AKHIR file supaya menang cascade dari
+   @media (max-width: 640px) di atasnya.
+   Target: iOS Safari + Android Chrome, 320-430px portrait,
+   landscape HP (tinggi <= 500px), iPad, plus notch.
+   =============================================================== */
+
+/* 1. TAP HIGHLIGHT — default iOS biru terang. Umpan balik
+      diganti :active di bawah. */
+html { -webkit-tap-highlight-color: transparent; }
+
+/* 2. SCROLL CHAINING — geser strip tidak ikut menggeser halaman. */
+#featured-grid { overscroll-behavior-x: contain; }
+.mobile-menu, .wishlist-panel { overscroll-behavior: contain; }
+
+/* 3. INPUT 16px — di bawah itu iOS auto-zoom saat fokus. */
+@media (max-width: 900px) {
+  input, select, textarea { font-size: 16px !important; }
+}
+
+/* 4. TOUCH TARGET 44x44 — perluas area tekan lewat ::before,
+      bounding box visual tidak berubah. */
+@media (hover: none) and (pointer: coarse) {
+  .wishlist-icon-btn, .nav-icon, .nav-menu-toggle { min-width: 44px; min-height: 44px; }
+
+  .link-cta, .card-order-btn, .contact-card__link, .footer__admin-link,
+  .product-card__name a, .link-inline, .breadcrumb a,
+  .footer__nav-group a, .footer__contact a { position: relative; }
+
+  .link-cta::before, .card-order-btn::before, .contact-card__link::before,
+  .footer__admin-link::before, .product-card__name a::before,
+  .link-inline::before, .breadcrumb a::before,
+  .footer__nav-group a::before, .footer__contact a::before {
+    content: ''; position: absolute; inset: -10px -4px;
+  }
+
+  .card-order-btn { min-height: 44px; display: flex; align-items: center; justify-content: center; }
+  .navbar__logo, .footer__logo { min-height: 44px; display: inline-flex; align-items: center; }
+
+  /* teks mikro dinaikkan supaya terbaca di layar sentuh */
+  .product-card__cat, .product-badge { font-size: 11.5px; }
+  .product-card__desc { font-size: 0.875rem; }
+  .footer__bottom, .footer__nav-group a { font-size: 0.8125rem; }
+}
+
+/* 5. ACTIVE STATE — HP tidak punya hover, tekan harus terasa.
+      :hover yang nyangkut setelah tap dimatikan. */
+@media (hover: none) {
+  .btn:active, .card-order-btn:active, .wishlist-icon-btn:active,
+  .nav-icon:active, .cat-card:active, .pill:active, .seg__btn:active,
+  .contact-card:active { transform: scale(0.97); transition: transform 90ms ease; }
+  .product-card:active { transform: scale(0.985); }
+  .link-cta:hover, .card-order-btn:hover { transform: none; }
+}
+
+/* 6. SAFE AREA — notch kiri/kanan (landscape iPhone) + home indicator. */
+.navbar__inner {
+  padding-left: max(var(--s4), env(safe-area-inset-left));
+  padding-right: max(var(--s4), env(safe-area-inset-right));
+}
+.mobile-menu { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.fab-whatsapp { right: max(1.75rem, calc(env(safe-area-inset-right, 0px) + 1rem)); }
+.sticky-order {
+  padding-left: max(var(--s4), env(safe-area-inset-left));
+  padding-right: max(var(--s4), env(safe-area-inset-right));
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+}
+
+/* 7. LANDSCAPE HP — navbar 68px = 17% layar, section 100svh memaksa
+      scroll aneh. Rapatkan, jangan paksa tinggi penuh. */
+@media (max-height: 500px) and (orientation: landscape) {
+  :root { --navbar-h: 52px; }
+  .navbar { height: 52px; }
+  .navbar__logo .logo-text { font-size: 0.95rem; }
+
+  .hero, .categories, .featured, .how-to-order, .about, .cta-section, .contact-section {
+    min-height: 0;
+    padding-block: var(--s5);
+  }
+  .hero { padding-top: calc(52px + var(--s4)); }
+  .hero__inner { grid-template-columns: 1.1fr 0.9fr; gap: var(--s4); align-items: center; }
+  .hero__headline { font-size: clamp(1.4rem, 3.4vw, 2rem); }
+  .hero__desc { font-size: var(--fs-sm); }
+  .scene { aspect-ratio: 16 / 10; }
+  .hero__scroll { display: none; }
+  .section-heading { font-size: clamp(1.3rem, 3vw, 1.7rem); }
+  .cta-collage { max-height: 30svh; }
+
+  /* Overlay fullscreen tetap kolom. Specificity harus kalahkan
+     .mobile-menu__nav a (0,1,1) di blok overlay di bawah. */
+  .mobile-menu .mobile-menu__nav { justify-content: flex-start; margin: 0; }
+  .mobile-menu .mobile-menu__nav a { padding: 10px 0; font-size: clamp(1.35rem, 5vw, 1.6rem); }
+  .mobile-menu .mobile-menu__foot { padding-top: 12px; }
+}
+
+/* 8. HP SANGAT KECIL (<=360px) — token dirapatkan, tombol tidak meluber. */
+@media (max-width: 360px) {
+  :root { --s7: 3rem; --s8: 4rem; }
+  .container { padding-inline: 16px; }
+  .hero__headline { font-size: clamp(1.6rem, 7.6vw, 2rem); }
+  .section-heading { font-size: clamp(1.25rem, 5.6vw, 1.5rem); }
+  .hero__actions .btn { width: 100%; }
+  .contact-grid { gap: 10px; }
+  .contact-card { padding: 12px; }
+  .contact-card__title { font-size: 0.8125rem; }
+  .contact-card__desc { font-size: 0.75rem; }
+  .contact-card .btn { font-size: 0.75rem; padding-inline: 10px; }
+  #featured-grid { grid-auto-columns: minmax(180px, 74vw); }
+  .chip { padding: 7px 10px; font-size: 0.6875rem; }
+  .product-badge { font-size: 10px; padding: 3px 7px; }
+}
+
+/* 9. TABLET 641-1024px — kategori & kontak 2 kolom, bukan 4 sempit. */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .categories__grid { grid-template-columns: repeat(2, 1fr); }
+  .contact-grid { grid-template-columns: repeat(2, 1fr); }
+  .steps { grid-template-columns: repeat(2, 1fr); }
+  .hero__inner { gap: var(--s6); }
+}
+
+/* 10. REDUCED MOTION di HP — hemat baterai, hindari mual. */
+@media (prefers-reduced-motion: reduce) and (max-width: 900px) {
+  .reveal { opacity: 1 !important; transform: none !important; }
+}
+
+/* 11. overflow-x: clip lebih baik dari hidden — hidden mematikan
+       position:sticky pada descendant. */
+@supports (overflow: clip) {
+  body { overflow-x: clip; }
+}
+
+/* 12. SCROLL LOCK saat menu mobile terbuka — latar tidak ikut
+       bergeser, dan tidak ada rubber-band di iOS. */
+body.nav-open { overflow: hidden; }
+@media (max-width: 1024px) {
+  body.nav-open .mobile-menu {
+    max-height: none;
+    height: 100dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+}
+
+/* 13. KONTAK DI HP — tombol & jadwal tidak boleh terpotong.
+       Kartu kontak 2 kolom = ~113px di HP 320px; label "Senin - Sabtu"
+       + jam tidak muat sebaris, dan btn teks panjang overflow. */
+@media (max-width: 640px) {
+  /* Satu kolom di bawah 480px: 2 kolom terlalu sempit untuk teks kontak. */
+  .contact-grid { grid-template-columns: 1fr; }
+  .contact-card { padding: var(--s4); }
+  .contact-card__desc { -webkit-line-clamp: 4; }
+
+  /* Jadwal: label di atas, jam di bawah — bukan sebaris meluber. */
+  .contact-card__schedule li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 6px;
+    align-items: baseline;
+  }
+  .contact-card__schedule li span { flex: 0 0 auto; }
+  .contact-card__schedule li strong { flex: 1 1 auto; min-width: 0; }
+
+  /* Link kontak (Instagram/Email): teks panjang boleh wrap. */
+  .contact-card__link { display: flex; flex-wrap: wrap; gap: 2px 6px; align-items: baseline; }
+  .contact-card__link strong { min-width: 0; overflow-wrap: anywhere; }
+
+  /* Tombol: boleh wrap, jangan clip. */
+  /* flex:1 di parent flex-column bikin tombol melar setinggi kartu.
+     width:100% + flex:none = lebar penuh, tinggi sesuai isi. */
+  .contact-card .btn {
+    font-size: var(--fs-xs);
+    padding-inline: var(--s3);
+    white-space: normal;
+    text-align: center;
+    line-height: 1.25;
+    min-height: 44px;
+    height: auto;
+    flex: 0 0 auto;
+    width: 100%;
+  }
+  .contact-card__actions, .contact-card__links { min-width: 0; }
+}
+
+/* 14. BADGE PRODUK — "Hemat 10%" bikin scrollWidth > clientWidth
+       karena badge keluar dari padding kartu. Kunci di dalam. */
+.product-card__img-wrap { overflow: hidden; }
+.product-card__badges,
+.product-card__badge {
+  max-width: calc(100% - 12px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .product-card__badges { inset-inline: 8px; }
+  .product-badge { font-size: 10.5px; padding: 3px 8px; }
+}
+
+/* 15. TAP TARGET DI HP — WCAG 2.5.8 minta 24px min, Apple/Google 44px.
+       Breadcrumb, link nama produk, dan chip filter masih 26-35px. */
+@media (max-width: 768px) {
+  /* Breadcrumb: 27px -> 44px area ketuk, visual tetap kecil. */
+  .breadcrumb a, .breadcrumb li {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-block: 0;
+  }
+  .breadcrumb { display: flex; flex-wrap: wrap; align-items: center; row-gap: 0; }
+
+  /* Nama produk di kartu: 26px -> 44px tanpa mengubah layout visual. */
+  .product-card__name a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding-block: 0;
+  }
+
+  /* Chip filter kategori: 35px -> 44px. */
+  .chip, .filter-chip, [data-filter], .katalog-filter button, .filter-btn {
+    min-height: 44px;
+    padding-block: 0;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Link "Lihat semua produk" & link footer: 25px -> 44px. */
+  .link-cta, a.section-link, .link-more, .footer-links a, .contact-card__link, footer a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .contact-card__link { min-height: 44px; }
+
+  /* Pagination. */
+  .pagination a, .pagination button { min-height: 44px; min-width: 44px;
+    display: inline-flex; align-items: center; justify-content: center; }
+}
+
+/* ---------------------------------------------------------------
+   PRE ORDER — Badge & Harga di Kartu Produk + Halaman Detail
+   --------------------------------------------------------------- */
+
+/* Badge "Pre Order" di thumbnail kartu */
+.product-badge--preorder {
+  background: #fff8e1;
+  color: #b45309;
+  border: 1px solid #f59e0b;
+}
+
+/* Link "Pre Order ke WhatsApp" menggantikan tampilan harga */
+.product-card__preorder-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: #25d366;
+  text-decoration: none;
+  line-height: 1.2;
+  transition: color 0.15s;
+}
+.product-card__preorder-link:hover { color: #128c4e; }
+.product-card__preorder-link svg { flex-shrink: 0; }
+
+/* "Pre Order ke WhatsApp" di halaman detail (menggantikan .price-main) */
+.detail-preorder-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #25d366;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.detail-preorder-link:hover { color: #128c4e; }
+.detail-preorder-link svg { flex-shrink: 0; }
+
+/* ===============================================================
+   NAVBAR SEARCH — pencarian rekomendasi pindah ke navbar
+   Ketik -> Produk Pilihan menyesuaikan -> auto-scroll ke hasil
+   =============================================================== */
+.navbar__search {
+  position: relative;
+  display: none;               /* desktop saja; mobile pakai overlay */
+  align-items: center;
+  flex: 0 1 300px;             /* referensi: 300px, tidak melar */
+  min-width: 0;
+}
+.navbar__search-icon {
+  position: absolute;
+  left: 0.85rem;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.navbar__search input {
+  width: 100%;
+  height: 40px;
+  padding: 0 2.2rem 0 2.35rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--border-strong);
+  border-radius: 100px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.navbar__search input::-webkit-search-cancel-button { -webkit-appearance: none; }
+.navbar__search input::placeholder { color: var(--text-muted); }
+.navbar__search input:focus {
+  border-color: var(--clr-primary-500, #b8601f);
+  box-shadow: 0 0 0 2px rgba(184, 96, 31, 0.18);
+  background: #fff;
+}
+.navbar__search-clear {
+  position: absolute;
+  right: 0.35rem;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.navbar__search-clear:hover { color: var(--text-primary); background: rgba(122, 61, 18, 0.1); }
+
+/* Cluster: menu + wishlist rata kanan */
+.navbar__cluster {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-left: auto;
+}
+
+@media (min-width: 1025px) {
+  .navbar__search { display: flex; }
+}
+
+@media (max-width: 1024px) {
+  .navbar__cluster { margin-left: 0; gap: 1rem; }
+}
+
+/* Referensi: di HP sempit teks brand disembunyikan, logo tetap. */
+@media (max-width: 520px) {
+  .logo-text { display: none; }
+}
+
+/* ===============================================================
+   MOBILE MENU — Fullscreen Overlay Navigation
+   Satu layar penuh, item besar, nomor urut, tautan sosial di kaki.
+   =============================================================== */
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 24px max(20px, env(safe-area-inset-left)) calc(24px + env(safe-area-inset-bottom, 0px));
+  background: var(--bg-primary, #f7f5f0);
+  border: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-8px);
+  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.mobile-menu:not([hidden]) {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+/* Aturan lama `body.nav-open .mobile-menu` (0,2,1) membatasi max-height ke
+   tinggi navbar. Specificity-nya lebih tinggi dari `.mobile-menu:not([hidden])`
+   (0,2,0), jadi override harus pakai selector yang setara atau lebih kuat. */
+
+
+/* Head: brand kiri, tombol Tutup kanan */
+.mobile-menu__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex: 0 0 auto;
+  padding-bottom: 20px;
+}
+.mobile-menu__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+.mobile-menu__logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.mobile-menu__close {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 8px 16px;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: transparent;
+  border: 1px solid var(--border-strong, rgba(0,0,0,0.18));
+  border-radius: 100px;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.mobile-menu__close:hover {
+  background: rgba(0,0,0,0.04);
+  border-color: var(--text-primary);
+}
+
+/* Nav: item besar, nomor urut kecil, garis pemisah */
+.mobile-menu__nav {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  justify-content: center;
+  margin: 8px 0;
+  padding: 0;
+  list-style: none;
+}
+.mobile-menu__nav li { display: block; }
+.mobile-menu__nav a {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 18px 0;
+  font-size: clamp(1.75rem, 8vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--text-primary);
+  text-decoration: none;
+  border-top: 1px solid var(--border-subtle);
+  transition: color 0.18s, padding-left 0.18s;
+}
+.mobile-menu__nav li:last-child a { border-bottom: 1px solid var(--border-subtle); }
+.mobile-menu__nav a:hover,
+.mobile-menu__nav a:focus-visible {
+  color: var(--clr-purple-400, #ad471f);
+  padding-left: 6px;
+}
+.mobile-menu__num {
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+/* Foot: tautan eksternal */
+.mobile-menu__foot {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 0 0 auto;
+  padding-top: 20px;
+}
+.mobile-menu__foot a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  min-height: 32px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-secondary, var(--text-muted));
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+.mobile-menu__foot a:hover { opacity: 0.65; }
+
+/* Overlay hanya untuk layar sempit. Toggle ikut: style.css baru
+   menyembunyikan link desktop di <=720px, jadi 721-1024 tanpa ini
+   tampil dua menu sekaligus. */
+@media (max-width: 1024px) {
+  .navbar__nav { display: none; }
+  .nav-menu-toggle { display: flex; }
+}
+@media (min-width: 1025px) {
+  .mobile-menu { display: none !important; }
+}
+
+/* ===============================================================
+   CATALOG HINT — tombol tutup (X) kanan
+   =============================================================== */
+/* Padding asli dari .catalog-hint di atas dipertahankan; hanya diberi
+   ruang ekstra di kanan untuk tombol X. */
+.catalog-hint { position: relative; padding-right: calc(var(--s4) + 30px); }
+.catalog-hint__close {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: currentColor;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s, background-color 0.15s;
+}
+.catalog-hint__close:hover {
+  opacity: 1;
+  background: rgba(0,0,0,0.06);
+}
+.catalog-hint[hidden] { display: none !important; }
